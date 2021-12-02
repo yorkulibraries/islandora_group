@@ -1,0 +1,230 @@
+<?php
+
+/**
+ * @file
+ * Contains islandora_group.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function islandora_group_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the islandora_group module.
+    case 'help.page.islandora_group':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('My Awesome Module') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function islandora_group_theme() {
+  return [
+    'islandora_group' => [
+      'render element' => 'children',
+    ],
+  ];
+}
+
+
+/**
+ * Implements hook_node_insert().
+ */
+function islandora_group_node_insert(NodeInterface $node) {
+  // Exit early if it has no access terms
+  if (!$node->hasField('field_access_terms')) {
+    return;
+  }
+
+  $terms = $node->get('field_access_terms')->referencedEntities();
+  if (empty($terms)) {
+    return;
+  }
+
+  // Arrange groups keyed by their name so we can look them up later.
+  $groups = \Drupal::service('entity_type.manager')->getStorage('group')->loadMultiple();
+  $groups_by_name = [];
+  foreach ($groups as $group) {
+    $groups_by_name[$group->label()] = $group;
+  }
+
+  $term = reset($terms);
+  if (isset($groups_by_name[$term->label()])) {
+    $group = $groups_by_name[$term->label()];
+    $group->addContent($node, 'group_node:' . $node->bundle());
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function islandora_group_node_update(NodeInterface $node) {
+  // Exit early if it has no access terms
+  if (!$node->hasField('field_access_terms')) {
+    return;
+  }
+
+  // Arrange groups keyed by their name so we can look them up later.
+  $groups = \Drupal::service('entity_type.manager')->getStorage('group')->loadMultiple();
+  $groups_by_name = [];
+  foreach ($groups as $group) {
+    $groups_by_name[$group->label()] = $group;
+  }
+
+  // Get the access terms for the node.
+  $terms = $node->get('field_access_terms')->referencedEntities();
+
+  // Delete content from groups if there's no terms.
+  if (empty($terms)) {
+    foreach (GroupContent::loadByEntity($node) as $group_content) {
+      $group_content->delete();
+    }
+    foreach (\Drupal::service('islandora.utils')->getMedia($node) as $media) {
+      foreach (GroupContent::loadByEntity($media) as $group_content) {
+        $group_content->delete();
+      }
+    }
+    return;
+  }
+
+  $term = reset($terms);
+
+  $found = FALSE;
+  foreach (GroupContent::loadByEntity($node) as $group_content) {
+    $group = $group_content->getGroup();
+    if ($group->label() != $term->label()) {
+      $group_content->delete();
+    }
+    else {
+      $found = TRUE;
+    }
+  }
+
+  if (!$found && isset($groups_by_name[$term->label()])) {
+    $group = $groups_by_name[$term->label()];
+    $group->addContent($node, 'group_node:' . $node->bundle());
+  }
+
+  // Reindex media since things have changed.
+  foreach (\Drupal::service('islandora.utils')->getMedia($node) as $media) {
+    islandora_group_media_update($media);
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function islandora_group_node_delete(NodeInterface $node) {
+  // Remove content from all groups.
+  foreach (GroupContent::loadByEntity($node) as $group_content) {
+    $group_content->delete();
+  }
+}
+
+/**
+ * Implements hook_media_insert().
+ */
+function islandora_group_media_insert(MediaInterface $media) {
+  $node = \Drupal::service('islandora.utils')->getParentNode($media);
+
+  if (empty($node)) {
+    return;
+  }
+
+  // Exit early if it has no access terms
+  if (!$node->hasField('field_access_terms')) {
+    return;
+  }
+
+  $terms = $node->get('field_access_terms')->referencedEntities();
+  if (empty($terms)) {
+    return;
+  }
+
+  // Arrange groups keyed by their name so we can look them up later.
+  $groups = \Drupal::service('entity_type.manager')->getStorage('group')->loadMultiple();
+  $groups_by_name = [];
+  foreach ($groups as $group) {
+    $groups_by_name[$group->label()] = $group;
+  }
+
+  $term = reset($terms);
+  if (isset($groups_by_name[$term->label()])) {
+    $group = $groups_by_name[$term->label()];
+    $group->addContent($media, 'group_media:' . $media->bundle());
+  }
+}
+
+/**
+ * Implements hook_media_update().
+ */
+function islandora_group_media_update(MediaInterface $media) {
+  $node = \Drupal::service('islandora.utils')->getParentNode($media);
+
+  // Unindex if removed from a node.
+  if (empty($node)) {
+    foreach (GroupContent::loadByEntity($media) as $group_content) {
+      $group_content->delete();
+    }
+    return;
+  }
+
+  // Exit early if it has no access terms
+  if (!$node->hasField('field_access_terms')) {
+    return;
+  }
+
+  // Arrange groups keyed by their name so we can look them up later.
+  $groups = \Drupal::service('entity_type.manager')->getStorage('group')->loadMultiple();
+  $groups_by_name = [];
+  foreach ($groups as $group) {
+    $groups_by_name[$group->label()] = $group;
+  }
+
+
+  // Get the access terms for the node.
+  $terms = $node->get('field_access_terms')->referencedEntities();
+
+  // Delete content from groups if there's no terms.
+  if (empty($terms)) {
+    foreach (GroupContent::loadByEntity($media) as $group_content) {
+      $group_content->delete();
+    }
+    return;
+  }
+
+  $term = reset($terms);
+
+  $found = FALSE;
+  foreach (GroupContent::loadByEntity($media) as $group_content) {
+    $group = $group_content->getGroup();
+    if ($group->label() != $term->label()) {
+      $group_content->delete();
+    }
+    else {
+      $found = TRUE;
+    }
+  }
+
+  if (!$found && isset($groups_by_name[$term->label()])) {
+    $group = $groups_by_name[$term->label()];
+    $group->addContent($media, 'group_media:' . $media->bundle());
+  }
+}
+
+/**
+ * Implements hook_media_delete().
+ */
+function islandora_group_media_delete(MediaInterface $media) {
+  foreach (GroupContent::loadByEntity($media) as $group_content) {
+    $group_content->delete();
+  }
+}

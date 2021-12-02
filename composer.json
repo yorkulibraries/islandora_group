@@ -1,0 +1,13 @@
+{
+    "name": "islandora_group",
+    "type": "drupal-module",
+    "description": "My Awesome Module",
+    "keywords": [
+    ],
+    "homepage": "https://www.drupal.org/project/islandora_group",
+    "minimum-stability": "dev",
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/islandora_group",
+        "source": "http://cgit.drupalcode.org/islandora_group",
+    },
+}
