@@ -1,13 +1,24 @@
 {
     "name": "islandora_group",
     "type": "drupal-module",
-    "description": "My Awesome Module",
+    "description": "Islandora's Access Control with Group",
     "keywords": [
     ],
     "homepage": "https://www.drupal.org/project/islandora_group",
     "minimum-stability": "dev",
     "support": {
         "issues": "https://www.drupal.org/project/issues/islandora_group",
-        "source": "http://cgit.drupalcode.org/islandora_group",
+        "source": "http://cgit.drupalcode.org/islandora_group"
     },
+    "repositories": {
+        "drupal": {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        }
+    },
+    "require": {
+        "drupal/group": "^1.4",
+        "drupal/groupmedia": "^2.0@alpha",
+        "islandora/islandora_defaults" : "^2.0"
+    }
 }

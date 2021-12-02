@@ -1,5 +1,10 @@
 name: 'Islandora Group'
 type: module
-description: 'My Awesome Module'
+description: 'This module implement Access control for Islandora objects and related media using Group moudle'
 core: 8.x
-package: 'Custom'
+core_version_requirement: ^8 || ^9
+dependencies:
+  - group
+  - groupmedia
+  - islandora_defaults
+

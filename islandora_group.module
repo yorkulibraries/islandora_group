@@ -6,6 +6,9 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\node\NodeInterface;
+use Drupal\group\Entity\GroupContent;
+use Drupal\media\MediaInterface;
 
 /**
  * Implements hook_help().
