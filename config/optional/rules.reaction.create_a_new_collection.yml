@@ -1,0 +1,98 @@
+langcode: en
+status: true
+dependencies: {  }
+id: create_a_new_collection
+label: 'Create a new Collection'
+events:
+  -
+    event_name: 'rules_entity_insert:node--islandora_object'
+description: ''
+tags: {  }
+config_version: '3'
+expression:
+  id: rules_rule
+  uuid: cbce857d-94d4-4bff-a203-a9adb005bcb3
+  weight: 0
+  conditions:
+    id: rules_and
+    uuid: eff2923c-b153-421d-9a65-cd51e00d2311
+    weight: 0
+    conditions:
+      -
+        id: rules_condition
+        uuid: 4f164eab-e332-496a-ab00-3df772523b15
+        weight: -50
+        condition_id: rules_entity_is_of_bundle
+        negate: false
+        context_values:
+          type: node
+          bundle: islandora_object
+        context_mapping:
+          entity: node
+        context_processors:
+          type:
+            rules_tokens: {  }
+          bundle:
+            rules_tokens: {  }
+        provides_mapping: {  }
+      -
+        id: rules_condition
+        uuid: 21377022-f65e-4fd3-ba35-4ecf149d0c87
+        weight: 0
+        condition_id: rules_data_comparison
+        negate: false
+        context_values:
+          operation: '=='
+          value: '24'
+        context_mapping:
+          data: node.field_model.target_id
+        context_processors:
+          operation:
+            rules_tokens: {  }
+          value:
+            rules_tokens: {  }
+        provides_mapping: {  }
+  actions:
+    id: rules_action_set
+    uuid: 8aa7777c-3b9c-4e1f-8c9a-bdb3f386b290
+    weight: 0
+    actions:
+      -
+        id: rules_action
+        uuid: 1cf880bb-24d3-4cb7-93b5-03681a0449c3
+        weight: -50
+        action_id: 'rules_entity_create:group'
+        context_values:
+          type: collection_based
+          label: ''
+        context_mapping: {  }
+        context_processors:
+          type:
+            rules_tokens: {  }
+          label:
+            rules_tokens: {  }
+        provides_mapping: {  }
+      -
+        id: rules_action
+        uuid: dca435b5-a962-42e7-b285-c2ef69c33cae
+        weight: -49
+        action_id: rules_data_set
+        context_values: {  }
+        context_mapping:
+          data: group_created.label.value
+          value: node.title.value
+        context_processors: {  }
+        provides_mapping: {  }
+      -
+        id: rules_action
+        uuid: dc089601-fc51-4d8a-8a06-04579a8e0af7
+        weight: -48
+        action_id: rules_entity_save
+        context_values:
+          immediate: ''
+        context_mapping:
+          entity: group_created
+        context_processors:
+          immediate:
+            rules_tokens: {  }
+        provides_mapping: {  }
