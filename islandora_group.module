@@ -37,6 +37,90 @@ function islandora_group_theme() {
   ];
 }
 
+/**
+ * Implements hook_entity_insert
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function islandora_group_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
+  sync_associated_taxonomy_with_group($entity, "insert");
+}
+
+/**
+ * Implements hook_entity_update
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function islandora_group_entity_update(Drupal\Core\Entity\EntityInterface $entity) {
+  sync_associated_taxonomy_with_group($entity, "update");
+}
+
+/**
+ * Implements hook_entity_delete
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function islandora_group_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
+  sync_associated_taxonomy_with_group($entity, "delete");
+}
+
+
+/**
+ * Create a taxonomy term which is the same name with Group
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ * @return void
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function sync_associated_taxonomy_with_group(Drupal\Core\Entity\EntityInterface $entity, string $action) {
+  if ($entity->getEntityTypeId() === "group") {
+    $group_type = $entity->bundle();
+
+    // get the Group associated taxonomy vocabulary
+    
+    $taxonomy = "islandora_access";
+
+    // create the taxonomy term which has the same name as Group Name
+    $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($taxonomy);
+
+    // create an taxonomy term which has the same name as group name.
+    $existedTerm = null;
+    foreach ($terms as $term) {
+      if ($term->name === $entity->label()) {
+        $existedTerm = $term;
+        break;
+      }
+    }
+    switch ($action) {
+      case "insert":
+      case "update":
+      {
+        // if no found terms, create new one
+        if ($existedTerm == null) {
+          \Drupal\taxonomy\Entity\Term::create([
+            'name' => $entity->label(),
+            'vid' => $taxonomy,
+          ])->save();
+        }
+        break;
+      }
+      case "delete":
+      {
+        if ($existedTerm != null) {
+          $controller = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+          $tobedeleted = $controller->loadMultiple([$existedTerm->tid]);
+          $controller->delete($tobedeleted);
+        }
+        break;
+      }
+      default:
+      {
+        break;
+      }
+    }
+  }
+}
 
 /**
  * Implements hook_node_insert().
