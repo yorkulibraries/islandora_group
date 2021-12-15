@@ -24,3 +24,11 @@ This module has the following dependencies:
 
 ## Credits
 This module is based on work completed by Danny Lamb at [Born-Digital](https://www.born-digital.com/).
+
+## Status
+
+- Currently, by tagging the node, it can add node and its media to a Group, then Group with configuration can take care of access control. 
+- **Issues**: 
+  - Unable to implement access control from Media level only, ie. restrict media only, but metadata can be opened for public. 
+  - Remove node/media from Group UI instead can be buggy which may lead to 500 error.  
+  - Effecting the search count of Search results in a Solr View. 
