@@ -28,7 +28,10 @@ This module is based on work completed by Danny Lamb at [Born-Digital](https://w
 ## Status
 
 - Currently, by tagging the node, it can add node and its media to a Group, then Group with configuration can take care of access control. 
-- **Issues**: 
+- **Automated**: 
+  - When a group is created, a taxonomy term is created in `Islandora Access` vocabulary. 
+  - Experimenting with [Rules](https://www.drupal.org/project/rules) to have the automation of creating a group when Islandora object is created with Model field is set to "Collection".
+- **Ongoing Issues**: 
   - Unable to implement access control from Media level only, ie. restrict media only, but metadata can be opened for public. 
   - Remove node/media from Group UI instead can be buggy which may lead to 500 error.  
-  - Effecting the search count of Search results in a Solr View. 
+  - Effecting the search count of Search results in a Solr View (possibly from Group). 
