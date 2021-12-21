@@ -20,6 +20,7 @@
         "drupal/group": "^1.4",
         "drupal/groupmedia": "^2.0@alpha",
         "islandora/islandora_defaults" : "^2.0",
+        "drupal/group_permissions":"^1.0@alpha",
         "drupal/rules" : "^3.0@alpha"
     }
 }
