@@ -1,5 +1,5 @@
 {
-    "name": "digitalutsc/islandora-group",
+    "name": "digitalutsc/islandora_group",
     "type": "drupal-module",
     "description": "Islandora's Access Control with Group",
     "keywords": [
