@@ -6,7 +6,7 @@ Islandora Group extends access control with Drupal's [Group module](https://www.
 
 - By composer (recommended):
   ````
-    composer require digitalutsc/islandora-group
+    composer require digitalutsc/islandora_group
   ````
 
 - By manually, run `git clone git@github.com:digitalutsc/islandora-group.git` to Drupal module directory. Then download the dependency modules in the next section bellow
