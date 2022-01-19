@@ -2,10 +2,13 @@ name: 'Islandora Group'
 type: module
 description: 'This module implement Access control for Islandora objects and related media using Group moudle'
 core: 8.x
-core_version_requirement: ^8 || ^9
+core_version_requirement: '^8 || ^9'
 dependencies:
   - group
   - groupmedia
   - group_permissions
   - islandora_defaults
   - rules
+  - field_permissions
+  - media
+  - taxonomy
