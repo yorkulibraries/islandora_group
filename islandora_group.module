@@ -43,9 +43,9 @@ function islandora_group_theme() {
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-/*function islandora_group_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
+function islandora_group_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
   sync_associated_taxonomy_with_group($entity, "insert");
-}*/
+}
 
 /**
  * Implements hook_entity_update
@@ -61,9 +61,9 @@ function islandora_group_entity_update(Drupal\Core\Entity\EntityInterface $entit
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-/*function islandora_group_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
+function islandora_group_entity_delete(Drupal\Core\Entity\EntityInterface $entity) {
   sync_associated_taxonomy_with_group($entity, "delete");
-}*/
+}
 
 /**
  * Implements hook_form_alter
@@ -83,7 +83,7 @@ function islandora_group_form_alter(&$form, &$form_state, $form_id) {
     }
     else if (str_starts_with($form_id, "media_")  && str_ends_with($form_id, "_edit_form")) {
         // when update media form
-        $form['actions']['submit']['#submit'][] = '';
+        $form['actions']['submit']['#submit'][] = 'form_submit_update_tagging_media_to_group';
     }
     else if (str_starts_with($form_id, "media_")  && str_ends_with($form_id, "_add_form")) {
         // when insert update
@@ -241,14 +241,81 @@ function form_submit_insert_tagging_media_to_group($form, $form_state) {
         // Arrange groups keyed by their name so we can look them up later.
         $groups_by_name = arrange_group_by_name();
 
-        $term = reset($terms);
-        if (isset($groups_by_name[$term->label()])) {
+        foreach ($terms as $term) {
+            if (isset($groups_by_name[$term->label()])) {
+                $group = $groups_by_name[$term->label()];
+                $group->addContent($media, 'group_media:' . $media->bundle());
+            }
+        }
+
+    }
+}
+
+/**
+ * Form submit update tagging media to groups.
+ * @param $form
+ * @param $form_state
+ * @return void
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function form_submit_update_tagging_media_to_group($form, $form_state) {
+    // For media has parent node, but has different acess term set
+    /** @var \Drupal\Core\Entity\EntityForm $form_object */
+    $form_object = $form_state->getFormObject();
+    if ($form_object instanceof EntityForm) {
+        $media = $form_object->getEntity();
+    }
+
+    $node = \Drupal::service('islandora.utils')->getParentNode($media);
+
+    // Unindex if removed from a node.
+    if (empty($node)) {
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group_content->delete();
+        }
+        // For standalone media (no parent node)
+        tag_media_into_group($media);
+
+        return;
+    }
+
+    // Exit early if it has no access terms
+    if (!$node->hasField('field_access_terms')) {
+        return;
+    }
+
+    // Arrange groups keyed by their name so we can look them up later.
+    $groups_by_name  = arrange_group_by_name();
+
+
+    // Get the access terms for the node.
+    $terms = $node->get('field_access_terms')->referencedEntities();
+
+    // Delete content from groups if there's no terms.
+    if (empty($terms)) {
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group_content->delete();
+        }
+        return;
+    }
+
+    foreach ($terms as $term) {
+        $found = FALSE;
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group = $group_content->getGroup();
+            if ($group->label() != $term->label()) {
+                $group_content->delete();
+            }
+            else {
+                $found = TRUE;
+            }
+        }
+
+        if (!$found && isset($groups_by_name[$term->label()])) {
             $group = $groups_by_name[$term->label()];
             $group->addContent($media, 'group_media:' . $media->bundle());
         }
     }
-
-
 }
 
 /**
@@ -261,69 +328,6 @@ function islandora_group_node_delete(NodeInterface $node) {
   }
 }
 
-/**
- * Implements hook_media_insert().
- */
-function islandora_group_media_insert(MediaInterface $media) {
-
-}
-
-/**
- * Implements hook_media_update().
- */
-/*function islandora_group_media_update(MediaInterface $media) {
-  $node = \Drupal::service('islandora.utils')->getParentNode($media);
-
-  // Unindex if removed from a node.
-  if (empty($node)) {
-    foreach (GroupContent::loadByEntity($media) as $group_content) {
-      $group_content->delete();
-    }
-      // For standalone media (no parent node)
-    //tag_media_into_group($media);
-
-    return;
-  }
-
-  // Exit early if it has no access terms
-  if (!$node->hasField('field_access_terms')) {
-    return;
-  }
-
-  // Arrange groups keyed by their name so we can look them up later.
-    $groups_by_name  = arrange_group_by_name();
-
-
-  // Get the access terms for the node.
-  $terms = $node->get('field_access_terms')->referencedEntities();
-
-  // Delete content from groups if there's no terms.
-  if (empty($terms)) {
-    foreach (GroupContent::loadByEntity($media) as $group_content) {
-      $group_content->delete();
-    }
-    return;
-  }
-
-  $term = reset($terms);
-
-  $found = FALSE;
-  foreach (GroupContent::loadByEntity($media) as $group_content) {
-    $group = $group_content->getGroup();
-    if ($group->label() != $term->label()) {
-      $group_content->delete();
-    }
-    else {
-      $found = TRUE;
-    }
-  }
-
-  if (!$found && isset($groups_by_name[$term->label()])) {
-    $group = $groups_by_name[$term->label()];
-    $group->addContent($media, 'group_media:' . $media->bundle());
-  }
-}
-*/
 /**
  * Implements hook_media_delete().
  */
