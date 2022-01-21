@@ -12,3 +12,4 @@ dependencies:
   - field_permissions
   - media
   - taxonomy
+  - node

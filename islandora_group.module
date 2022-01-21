@@ -293,7 +293,7 @@ function form_submit_update_tagging_media_to_group($form, $form_state) {
 
     // Delete content from groups if there's no terms.
     if (empty($terms)) {
-        // if media's parent node doesn't have any access terms, 
+        // if media's parent node doesn't have any access terms, delete the existed relations
         foreach (GroupContent::loadByEntity($media) as $group_content) {
             $group_content->delete();
         }
