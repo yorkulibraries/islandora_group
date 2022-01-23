@@ -10,6 +10,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
 use Drupal\group\Entity\GroupContent;
 use Drupal\media\MediaInterface;
+use Drupal\taxonomy\Entity\Term;
 
 /**
  * Implements hook_help().
@@ -107,7 +108,6 @@ function form_submit_delete_relation_untagging_entity_to_group($form, $form_stat
     $form_object = $form_state->getFormObject();
     if ($form_object instanceof EntityForm) {
         $entity = $form_object->getEntity();
-        print_log($entity->getEntityTypeId());
         if ($entity->getEntityTypeId() === 'group_content') {
             $group_content = $entity;
             $group = $group_content->getGroup();
@@ -115,13 +115,13 @@ function form_submit_delete_relation_untagging_entity_to_group($form, $form_stat
                 $node = $group_content->getEntity();
 
                 // update field access terms in node level
-                update_field_access_terms($node, $group->label());
+                remove_term_in_field_access_terms($node, $group->label());
             }
             else if ($entity->getEntity()->getEntityTypeId() === "media") {
                 $media = $group_content->getEntity();
 
                 // update field access terms in media level
-                update_field_access_terms($media, $group->label());
+                remove_term_in_field_access_terms($media, $group->label());
             }
         }
     }
@@ -138,63 +138,101 @@ function form_submit_update_tagging_node_to_group($form, $form_state) {
     /** @var \Drupal\Core\Entity\EntityForm $form_object */
     $form_object = $form_state->getFormObject();
     if ($form_object instanceof EntityForm) {
+
+        // get the entity from form
         $entity = $form_object->getEntity();
-        // Do something with the entity.
 
+        // add node to group
+        add_entity_to_group($entity);
 
-        // Exit early if it has no access terms
-        if (!$entity->hasField('field_access_terms')) {
-            return;
+        // redirect if the node is a collection
+        redirect_adding_childrennode_to_group($form, $form_state, $entity);
+    }
+
+}
+
+/**
+ * Adding nodes to group
+ * @param $entity
+ * @return void
+ * @throws \Drupal\Core\Entity\EntityStorageException
+ */
+function add_entity_to_group($entity) {
+    // Exit early if it has no access terms
+    if (!$entity->hasField('field_access_terms')) {
+        return;
+    }
+
+    // Arrange groups keyed by their name so we can look them up later.
+    $groups_by_name = arrange_group_by_name();
+
+    // Get the access terms for the node.
+    $terms = $entity->get('field_access_terms')->referencedEntities();
+
+    // if there's no terms in field_access_term, delete content from groups
+    if (empty($terms)) {
+        foreach (GroupContent::loadByEntity($entity) as $group_content) {
+            $group_content->delete();
         }
-
-        // Arrange groups keyed by their name so we can look them up later.
-        $groups_by_name = arrange_group_by_name();
-
-        // Get the access terms for the node.
-        $terms = $entity->get('field_access_terms')->referencedEntities();
-
-        // if there's no terms in field_access_term, delete content from groups
-        if (empty($terms)) {
-            foreach (GroupContent::loadByEntity($entity) as $group_content) {
+        foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
+            foreach (GroupContent::loadByEntity($media) as $group_content) {
                 $group_content->delete();
             }
-            foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
-                foreach (GroupContent::loadByEntity($media) as $group_content) {
-                    $group_content->delete();
-                }
-            }
-            return;
         }
+        return;
+    }
 
-        // if there is terms in field_access_term
-        foreach ($terms as $term) {
-            $found = FALSE;
+    // if there is terms in field_access_term
+    foreach ($terms as $term) {
+        $found = FALSE;
 
-            // Guarantee a node - 1 : 1 - a group
-            foreach (GroupContent::loadByEntity($entity) as $group_content) {
-                $group = $group_content->getGroup();
-                //if ($group->label() != $term->label()) {
-                if ($group->label() === $term->label()) {
-                    $group_content->delete();
-                }
-                else {
-                    $found = TRUE;
-                }
+        // Guarantee a node - 1 : 1 - a group
+        foreach (GroupContent::loadByEntity($entity) as $group_content) {
+            $group = $group_content->getGroup();
+            //if ($group->label() != $term->label()) {
+            if ($group->label() === $term->label()) {
+                $group_content->delete();
             }
-
-            //if (!$found && isset($groups_by_name[$term->label()])) {
-            if (isset($groups_by_name[$term->label()])) {
-                $group = $groups_by_name[$term->label()];
-                $group->addContent($entity, 'group_node:' . $entity->bundle());
+            else {
+                $found = TRUE;
             }
         }
 
-
-        // Reindex media since things have changed.
-        foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
-            islandora_group_media_update($media);
+        //if (!$found && isset($groups_by_name[$term->label()])) {
+        if (isset($groups_by_name[$term->label()])) {
+            $group = $groups_by_name[$term->label()];
+            $group->addContent($entity, 'group_node:' . $entity->bundle());
         }
+    }
 
+
+    // Reindex media since things have changed.
+    foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
+        tag_media_into_group($media);
+    }
+
+}
+
+/**
+ * Redirect to confirm form to add Children nodes to groups
+ * @param $form
+ * @param $form_state
+ * @param $entity
+ * @return void
+ */
+function redirect_adding_childrennode_to_group($form, $form_state, $entity) {
+    if ($entity->hasField('field_model') ) {
+        // Get associated term model
+        $term_id = $entity->get("field_model")->getValue()[0]['target_id'];
+        $term_name = Term::load($term_id)->get('name')->value;
+
+        // if collection, redirect to the Confirm form with selecting children to tag
+        if ($term_name === "Collection") {
+            // check if this node is collection, redirect to confirm form
+            $form_state->setRedirect('islandora_group.recursive_apply_accesscontrol', [
+                'nid' => $entity->id(),
+            ]);
+        }
     }
 }
 
@@ -234,7 +272,6 @@ function form_submit_insert_tagging_node_to_group($form, $form_state) {
                 catch(\Exception $e) {
                     drupal_log("Unable to add node to group due to ". $e->getMessage());
                 }
-
             }
         }
 
@@ -377,11 +414,11 @@ function islandora_group_media_delete(MediaInterface $media) {
 
 
 /**
- * Update field_access_terms.
+ * Remove term(s) in field_access_terms.
  * @param $ne
  * @return void
  */
-function update_field_access_terms($ne, $group_name) {
+function remove_term_in_field_access_terms($ne, $group_name) {
     // TODO: search if the node->field_access_terms contain group name
     if (!$ne->hasField('field_access_terms')) {
         return;

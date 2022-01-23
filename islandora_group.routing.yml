@@ -1,0 +1,8 @@
+islandora_group.recursive_apply_accesscontrol:
+  path: '/admin/node/{nid}/access-control/children'
+  defaults:
+    _form: '\Drupal\islandora_group\Form\ConfirmCollectionAccessTermsForm'
+    _title: 'Confirm applying access control for a collection'
+  requirements:
+    _permission: 'administer site configuration'
+    id: ^\d+$
