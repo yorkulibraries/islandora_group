@@ -500,7 +500,7 @@ function add_media_from_node_to_group($node, $media) {
         $found = FALSE;
         foreach (GroupContent::loadByEntity($media) as $group_content) {
             $group = $group_content->getGroup();
-            if ($group->label() != $term->label()) {
+            if ($group->label() == $term->label()) {
                 $group_content->delete();
             }
             else {
