@@ -146,7 +146,7 @@ function form_submit_update_tagging_node_to_group($form, $form_state) {
         add_entity_to_group($entity);
 
         // redirect if the node is a collection
-        redirect_adding_childrennode_to_group($form, $form_state, $entity);
+        //redirect_adding_childrennode_to_group($form, $form_state, $entity);
     }
 
 }
@@ -208,7 +208,7 @@ function add_entity_to_group($entity) {
 
     // Reindex media since things have changed.
     foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
-        tag_media_into_group($media);
+        add_media_from_node_to_group($entity, $media);
     }
 
 }
@@ -337,60 +337,8 @@ function form_submit_update_tagging_media_to_group($form, $form_state) {
     if ($form_object instanceof EntityForm) {
         $media = $form_object->getEntity();
     }
-
-    $node = \Drupal::service('islandora.utils')->getParentNode($media);
-
-    // Unindex if removed from a node.
-    if (empty($node)) {
-        foreach (GroupContent::loadByEntity($media) as $group_content) {
-            $group_content->delete();
-        }
-        // For standalone media (no parent node)
-        tag_media_into_group($media);
-
-        return;
-    }
-
-    // Exit early if it has no access terms
-    if (!$node->hasField('field_access_terms')) {
-        return;
-    }
-
-    // Arrange groups keyed by their name so we can look them up later.
-    $groups_by_name  = arrange_group_by_name();
-
-
-    // Get the access terms for the node.
-    $terms = $node->get('field_access_terms')->referencedEntities();
-
-    // Delete content from groups if there's no terms.
-    if (empty($terms)) {
-        // if media's parent node doesn't have any access terms, delete the existed relations
-        foreach (GroupContent::loadByEntity($media) as $group_content) {
-            $group_content->delete();
-        }
-        // For standalone media (no parent node)
-        tag_media_into_group($media);
-        return;
-    }
-
-    foreach ($terms as $term) {
-        $found = FALSE;
-        foreach (GroupContent::loadByEntity($media) as $group_content) {
-            $group = $group_content->getGroup();
-            if ($group->label() != $term->label()) {
-                $group_content->delete();
-            }
-            else {
-                $found = TRUE;
-            }
-        }
-
-        if (!$found && isset($groups_by_name[$term->label()])) {
-            $group = $groups_by_name[$term->label()];
-            $group->addContent($media, 'group_media:' . $media->bundle());
-        }
-    }
+    // tag the media to a group
+    tag_media_into_group($media);
 }
 
 /**
@@ -513,15 +461,83 @@ function arrange_group_by_name(): array {
  * @param MediaInterface $media
  * @return void
  */
+function add_media_from_node_to_group($node, $media) {
+    // Unindex if removed from a node.
+    if (empty($node)) {
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group_content->delete();
+        }
+        // For standalone media (no parent node)
+        tag_media_into_group($media);
+
+        return;
+    }
+
+    // Exit early if it has no access terms
+    if (!$node->hasField('field_access_terms')) {
+        return;
+    }
+
+    // Arrange groups keyed by their name so we can look them up later.
+    $groups_by_name  = arrange_group_by_name();
+
+
+    // Get the access terms for the node.
+    $terms = $node->get('field_access_terms')->referencedEntities();
+
+    // Delete content from groups if there's no terms.
+    if (empty($terms)) {
+        // if media's parent node doesn't have any access terms, delete the existed relations
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group_content->delete();
+        }
+        // For standalone media (no parent node)
+        tag_media_into_group($media);
+        return;
+    }
+
+    foreach ($terms as $term) {
+        $found = FALSE;
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group = $group_content->getGroup();
+            if ($group->label() != $term->label()) {
+                $group_content->delete();
+            }
+            else {
+                $found = TRUE;
+            }
+        }
+
+        //if (!$found && isset($groups_by_name[$term->label()])) {
+        if (isset($groups_by_name[$term->label()])) {
+            $group = $groups_by_name[$term->label()];
+            $group->addContent($media, 'group_media:' . $media->bundle());
+        }
+    }
+}
+
+
+
+/**
+ * Tag a media in to Group
+ * @param MediaInterface $media
+ * @return void
+ */
 function tag_media_into_group(MediaInterface $media) {
     // For standalone media (no parent node)
     if (!$media->hasField('field_access_terms')) {
         return;
     }
+    // get field_access_terms 
     $terms = $media->get('field_access_terms')->referencedEntities();
     if (empty($terms)) {
+        // if media's parent node doesn't have any access terms, delete the existed relations
+        foreach (GroupContent::loadByEntity($media) as $group_content) {
+            $group_content->delete();
+        }
         return;
     }
+
     // Arrange groups keyed by their name so we can look them up later.
     $groups_by_name = arrange_group_by_name();
 
