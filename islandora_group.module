@@ -146,7 +146,7 @@ function form_submit_update_tagging_node_to_group($form, $form_state) {
         add_entity_to_group($entity);
 
         // redirect if the node is a collection
-        //redirect_adding_childrennode_to_group($form, $form_state, $entity);
+        redirect_adding_childrennode_to_group($form, $form_state, $entity);
     }
 
 }

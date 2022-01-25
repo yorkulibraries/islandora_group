@@ -25,6 +25,10 @@ This module has the following dependencies:
 ## Credits
 This module is based on work completed by Danny Lamb at [Born-Digital](https://www.born-digital.com/).
 
+## Default Groups Setup for Testing.
+
+Install the module the following module: https://github.com/digitalutsc/islandora_group_defaults 
+
 ## Status
 
 - Currently, by tagging the node, it can add node and its media to a Group, then Group with configuration can take care of access control. 
