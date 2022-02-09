@@ -1,0 +1,11 @@
+islandora_group.node.access_control:
+  route_name: islandora_group.node.access_control
+  title: 'Access Control with Group'
+  base_route: entity.node.canonical
+  weight: 100
+
+islandora_group.media.access_control:
+  route_name: islandora_group.media.access_control
+  title: 'Access Control with Group'
+  base_route: entity.media.canonical
+  weight: 100

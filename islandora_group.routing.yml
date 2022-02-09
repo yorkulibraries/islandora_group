@@ -6,3 +6,31 @@ islandora_group.recursive_apply_accesscontrol:
   requirements:
     _permission: 'administer site configuration'
     id: ^\d+$
+
+islandora_group.node.access_control:
+  path: '/node/{node}/access-control'
+  defaults:
+    _form: '\Drupal\islandora_group\Form\IsandoraObjectAccessControlForm'
+    _title: 'Access control with Groups'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _admin_route: TRUE
+    no_cache: true
+    parameters:
+      node:
+        type: entity:node
+
+islandora_group.media.access_control:
+  path: '/media/{media}/access-control'
+  defaults:
+    _form: '\Drupal\islandora_group\Form\MediaAccessControlForm'
+    _title: 'Access control with Groups'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _admin_route: TRUE
+    no_cache: true
+    parameters:
+      node:
+        type: entity:node

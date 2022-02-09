@@ -14,6 +14,24 @@ use Drupal\Core\Entity\EntityInterface;
  */
 class Utilities {
 
+    /**
+     * Get Islandora Access terms associated with Groups
+     * @return array
+     * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+     * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+     */
+    public static function getIslandoraAccessTerms() {
+        // create the taxonomy term which has the same name as Group Name
+        $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree("islandora_access");
+        $groups = array_keys(self::arrange_group_by_name());
+        $result = [];
+        foreach ($terms as $term) {
+            if (in_array($term->name, $groups)) {
+                $result[$term->tid] = $term->name;
+            }
+        }
+        return $result;
+    }
 
     /**
      * Create a taxonomy term which is the same name with Group
@@ -32,7 +50,6 @@ class Utilities {
         // get the Group associated taxonomy vocabulary
         $taxonomy = "islandora_access";
 
-        // create the taxonomy term which has the same name as Group Name
         $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($taxonomy);
 
         // create an taxonomy term which has the same name as group name.
@@ -105,7 +122,7 @@ class Utilities {
         }
 
         // Reindex media since things have changed.
-        foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
+        /*foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
             //self::adding_media_of_islandora_object_to_group($entity, $media);
 
             // check if media already has access_term, if no. ... apply the same as node
@@ -127,7 +144,7 @@ class Utilities {
             }
 
 
-        }
+        }*/
 
     }
 
@@ -136,18 +153,15 @@ class Utilities {
      * @return void
      */
     public static function untag_existed_field_access_terms($entity) {
-        self::print_log("untag_existed_field_access_terms");
         $terms = $entity->get('field_access_terms')->referencedEntities();
         $i = 0;
         foreach ($terms as $term) {
-            self::print_log("Remove tag here ");
             if ($entity->get("field_access_terms")->get($i) !== null) {
-                self::print_log("Remove tag here ");
                 $entity->get("field_access_terms")->removeItem($i);
-                $entity->save();
             }
             $i++;
         }
+        $entity->save();
     }
 
     /**
