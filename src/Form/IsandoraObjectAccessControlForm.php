@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\islandora_group\Utilities;
 use Drupal\node\NodeInterface;
 use Drupal\media\Entity\Media;
+use Drupal\taxonomy\Entity\Term;
 
 class IsandoraObjectAccessControlForm extends FormBase {
 
@@ -34,10 +35,10 @@ class IsandoraObjectAccessControlForm extends FormBase {
         foreach (\Drupal::service('islandora.utils')->getMedia($node) as $media) {
             $terms = $media->get('field_access_terms')->referencedEntities();
             if (count($terms) > 0) {
-                $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure</a>";
+                $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
             }
             else {
-                $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure</a>";
+                $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
             }
         }
 
@@ -69,7 +70,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
         $form['access-control']['node']['access-control'] = [
             '#type' => 'checkboxes',
             '#options' => $group_terms,
-            '#title' => $this->t('Adding this node to the following groups: '),
+            '#title' => $this->t('Select group(s) to add this node: '),
             '#default_value' => $node_term_default
         ];
 
@@ -81,7 +82,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
         if (count($options_available_media) > 0) {
             $form['access-control']['media']['access-control'] = [
                 '#type' => 'checkboxes',
-                '#title' => $this->t('Adding the available media to above group: '),
+                '#title' => $this->t('Select media to add to the above group(s)'),
                 '#options' => $options_available_media,
 
             ];
@@ -99,17 +100,42 @@ class IsandoraObjectAccessControlForm extends FormBase {
         }
 
 
+        if (Utilities::isCollection($node)) {
+            // check if this node is collection, redirect to confirm form
+            // get children nodes
+            $query = \Drupal::entityQuery('node')
+                ->condition('status', 1)
+                ->condition('type','islandora_object')
+                ->condition('field_member_of', $node->id());
+            $childrenNIDs = $query->execute();
+
+            $options = [];
+            foreach ($childrenNIDs as $cnid) {
+                $childNode = \Drupal::entityTypeManager()->getStorage('node')->load($cnid);
+                $options[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+            }
+
+
+            $form['access-control']['children-nodes'] = [
+                '#type' => 'details',
+                '#title' => $this->t("Children Node"),
+                '#open' => TRUE,
+            ];
+            $form['access-control']['children-nodes']['select-nodes'] = array(
+                '#type' => 'checkboxes',
+                '#options' => $options,
+                '#title' => $this->t('Select the children node:'),
+            );
+        }
+
         $form['submit'] = array(
             '#type' => 'submit',
             '#value' => 'Apply',
         );
 
-
-
-
-
         return $form;
     }
+
 
 
     /**

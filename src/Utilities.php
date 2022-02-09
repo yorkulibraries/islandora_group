@@ -23,11 +23,13 @@ class Utilities {
     public static function getIslandoraAccessTerms() {
         // create the taxonomy term which has the same name as Group Name
         $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree("islandora_access");
-        $groups = array_keys(self::arrange_group_by_name());
+        $groups = self::arrange_group_by_name();
+
         $result = [];
         foreach ($terms as $term) {
-            if (in_array($term->name, $groups)) {
-                $result[$term->tid] = $term->name;
+            if (in_array($term->name, array_keys($groups))) {
+                $group = $groups[$term->name];
+                $result[$term->tid] = $term->name . "  <a href='/group/".$group->id()."/permissions' target='_blank'>Configure permissions</a>";
             }
         }
         return $result;
@@ -89,6 +91,25 @@ class Utilities {
     }
 
     /**
+     * @param $node
+     * @return bool
+     */
+    public static function isCollection($node) {
+        if ($node->hasField('field_model') ) {
+            // Get associated term model
+            $term_id = $node->get("field_model")->getValue()[0]['target_id'];
+            $term_name = Term::load($term_id)->get('name')->value;
+
+            // if collection, redirect to the Confirm form with selecting children to tag
+            if ($term_name === "Collection") {
+                return true;
+
+            }
+        }
+        return false;
+    }
+
+    /**
      * Adding nodes to group
      * @param $entity
      * @return void
@@ -112,7 +133,7 @@ class Utilities {
             // no term, exist
             return;
         }
-        self::print_log("==============clearning .....");
+
         // if there is terms in field_access_term
         foreach ($node_terms as $term) {
             if (isset($groups_by_name[$term->label()])) {
