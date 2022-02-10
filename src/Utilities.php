@@ -302,7 +302,6 @@ class Utilities {
             // no term, exit;
             return;
         }
-        self::print_log("%%%%%%% How many terms in this media: " . count($terms));
         // Arrange groups keyed by their name so we can look them up later.
         $groups_by_name = self::arrange_group_by_name();
 

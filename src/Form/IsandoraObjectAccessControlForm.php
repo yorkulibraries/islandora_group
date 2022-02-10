@@ -142,6 +142,11 @@ class IsandoraObjectAccessControlForm extends FormBase {
             }
 
             if (count($options_available_children) > 0) {
+                $form['access-control']['children-nodes']['include-meida'] = array(
+                    '#type' => 'checkbox',
+                    '#title' => $this->t('Include their media as well.'),
+                );
+
                 $form['access-control']['children-nodes']['access-control'] = array(
                     '#type' => 'checkboxes',
                     '#options' => $options_available_children,
@@ -213,6 +218,43 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $media->save();
             }
             Utilities::adding_media_only_into_group($media);
+        }
+
+
+        $children_nodes = array_values(array_filter($form_state->getValues()['access-control']['children-nodes']['access-control']));
+        foreach ($children_nodes as $cnid) {
+            // get selected child node
+            $child = \Drupal\node\Entity\Node::load($cnid);
+
+            // clearing group relation with islandora object
+            Utilities::clear_group_relation_by_entity($child);
+
+            // clear field_access_terms in media level
+            Utilities::untag_existed_field_access_terms($child);
+
+            // set selected term id
+            if (count($targets) > 0) {
+                $child->set('field_access_terms', $targets);
+                $child->save();
+            }
+            // add this node to group
+            Utilities::adding_islandora_object_to_group($child);
+
+            // TODO : UI configure add child's media to group
+            if ($form_state->getValues()['access-control']['children-nodes']['include-meida'] == true) {
+                $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
+                foreach ($child_medias as $child_media) {
+
+                    // clear field_access_terms in media level
+                    Utilities::untag_existed_field_access_terms($child_media);
+
+                    if (count($targets) > 0) {
+                        $child_media->set('field_access_terms', $targets);
+                        $child_media->save();
+                    }
+                    Utilities::adding_media_only_into_group($child_media);
+                }
+            }
         }
     }
 
