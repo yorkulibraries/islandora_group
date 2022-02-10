@@ -43,6 +43,7 @@ class MediaAccessControlForm extends FormBase {
         }
 
         $form = [];
+        $form['#title'] = t($media->getName() . ' Media Access Control');
         $form['#tree'] = true;
 
         $form['media_id'] = [
@@ -88,16 +89,21 @@ class MediaAccessControlForm extends FormBase {
         Utilities::untag_existed_field_access_terms($media);
 
         // clear group relation with media
-        Utilities::clear_group_relation_by_media($media);
+        Utilities::clear_group_relation_by_entity($media);
 
-        // tagged field_access_terms with selected groups
-        foreach ($selected_groups as $group_id) {
-            $media->field_access_terms[] = ['target_id' => $group_id];
+        if (count($selected_groups) > 0) {
+            $targets = [];
+            foreach ($selected_groups as $term_id) {
+                $targets[] = ['target_id' => $term_id];
+            }
+            if (count($targets) > 0) {
+                $media->set('field_access_terms', $targets);
+                $media->save();
+            }
+            // add media to selected group
+            Utilities::adding_media_only_into_group($media);
         }
-        $media->save();
 
-        // add media to selected group
-        Utilities::adding_media_only_into_group($media);
 
     }
 

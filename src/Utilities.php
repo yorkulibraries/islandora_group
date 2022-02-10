@@ -125,7 +125,7 @@ class Utilities {
         $groups_by_name = self::arrange_group_by_name();
 
         // clear out group relations with islandora_object first
-        self::clear_group_relation_by_islandora_object($entity);
+        self::clear_group_relation_by_entity($entity);
 
         // Get the access terms for the node.
         $node_terms = $entity->get('field_access_terms')->referencedEntities();
@@ -169,21 +169,7 @@ class Utilities {
 
     }
 
-    /**
-     * @param $entity
-     * @return void
-     */
-    public static function untag_existed_field_access_terms($entity) {
-        $terms = $entity->get('field_access_terms')->referencedEntities();
-        $i = 0;
-        foreach ($terms as $term) {
-            if ($entity->get("field_access_terms")->get($i) !== null) {
-                $entity->get("field_access_terms")->removeItem($i);
-            }
-            $i++;
-        }
-        $entity->save();
-    }
+
 
     /**
      * Tag a media in to Group
@@ -195,7 +181,7 @@ class Utilities {
         if (empty($node)) {
 
             // clear group relation from media
-            self::clear_group_relation_by_media($media);
+            self::clear_group_relation_by_entity($media);
 
             // add media to node
             self::adding_media_only_into_group($media);
@@ -212,7 +198,7 @@ class Utilities {
         $groups_by_name  = self::arrange_group_by_name();
 
         // clear group relations with the media first
-        self::clear_group_relation_by_media($media);
+        self::clear_group_relation_by_entity($media);
 
         // Get the access terms for the node.
         $terms = $node->get('field_access_terms')->referencedEntities();
@@ -271,16 +257,29 @@ class Utilities {
      * @return void
      * @throws \Drupal\Core\Entity\EntityStorageException
      */
-    public static function clear_group_relation_by_islandora_object($entity) {
+    public static function clear_group_relation_by_entity($entity) {
+        if (!$entity->hasField('field_access_terms')) {
+            return;
+        }
+
         // for each term, loop through groups-entity
         foreach (GroupContent::loadByEntity($entity) as $group_content) {
             $group_content->delete();
         }
-        foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
-            self::clear_group_relation_by_media($media);
-        }
     }
 
+    /**
+     * @param $entity
+     * @return void
+     */
+    public static function untag_existed_field_access_terms($entity) {
+        $terms = $entity->get('field_access_terms')->referencedEntities();
+        if(count($terms) > 0) {
+            $entity->set('field_access_terms', []);
+            $entity->save();
+        }
+
+    }
 
 
     /**
@@ -295,7 +294,7 @@ class Utilities {
         }
 
         // clear group relation with media
-        self::clear_group_relation_by_media($media);
+        self::clear_group_relation_by_entity($media);
 
         // get field_access_terms
         $terms = $media->get('field_access_terms')->referencedEntities();
@@ -303,7 +302,7 @@ class Utilities {
             // no term, exit;
             return;
         }
-
+        self::print_log("%%%%%%% How many terms in this media: " . count($terms));
         // Arrange groups keyed by their name so we can look them up later.
         $groups_by_name = self::arrange_group_by_name();
 
@@ -331,22 +330,7 @@ class Utilities {
         echo "</pre>";
     }
 
-    /**
-     * Clear out existing Group-entity relations
-     *
-     * @param $entity
-     * @return void
-     * @throws \Drupal\Core\Entity\EntityStorageException
-     */
-    public static function clear_group_relation_by_media($media) {
-        // clear field_access_terms in media level
-        //self::untag_existed_field_access_terms($media);
 
-        // delete group-media relations
-        foreach (GroupContent::loadByEntity($media) as $group_content) {
-            $group_content->delete();
-        }
-    }
 
     /**
      * Redirect to confirm form to add Children nodes to groups

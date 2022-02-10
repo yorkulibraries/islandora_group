@@ -53,6 +53,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
         }
 
         $form = [];
+        $form['#title'] = t($node->getTitle() . ' Repository Item Access Control');
         $form['#tree'] = true;
 
         $form['nid'] = [
@@ -109,23 +110,44 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 ->condition('field_member_of', $node->id());
             $childrenNIDs = $query->execute();
 
+            $options_available_children = [];
+            $options_unvailable_children = [];
+
             $options = [];
             foreach ($childrenNIDs as $cnid) {
                 $childNode = \Drupal::entityTypeManager()->getStorage('node')->load($cnid);
-                $options[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+
+                $childnode_terms = $childNode->get('field_access_terms')->referencedEntities();
+                if (count($childnode_terms) > 0) {
+                    $options_unvailable_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+                }
+                else {
+                    $options_available_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+                }
             }
-
-
             $form['access-control']['children-nodes'] = [
                 '#type' => 'details',
                 '#title' => $this->t("Children Node"),
                 '#open' => TRUE,
             ];
-            $form['access-control']['children-nodes']['select-nodes'] = array(
-                '#type' => 'checkboxes',
-                '#options' => $options,
-                '#title' => $this->t('Select the children node:'),
-            );
+
+            if (count($options_unvailable_children) > 0) {
+                $form['access-control']['children-nodes']['not-access-control'] = [
+                    '#type' => 'checkboxes',
+                    '#title' => $this->t('The following children nodes already has access control: '),
+                    '#options' => $options_unvailable_children,
+                    '#default_value' => array_keys($options_unvailable_children),
+                    '#disabled' => true
+                ];
+            }
+
+            if (count($options_available_children) > 0) {
+                $form['access-control']['children-nodes']['access-control'] = array(
+                    '#type' => 'checkboxes',
+                    '#options' => $options_available_children,
+                    '#title' => $this->t('Select the following children nodes:'),
+                );
+            }
         }
 
         $form['submit'] = array(
@@ -136,7 +158,15 @@ class IsandoraObjectAccessControlForm extends FormBase {
         return $form;
     }
 
-
+    /**
+     * {@inheritdoc}
+     */
+    /*public function validateForm(array &$form, FormStateInterface $form_state) {
+        $selected_groups = array_values(array_filter($form_state->getValues()['access-control']['node']['access-control']));
+        if (isset($selected_groups) && count($selected_groups) <= 0) {
+            $form_state->setErrorByName('access-control', $this->t('Please select the group(s) to apply for this node and its content'));
+        }
+    }*/
 
     /**
      * {@inheritdoc}
@@ -149,42 +179,41 @@ class IsandoraObjectAccessControlForm extends FormBase {
         // get selected group
         $selected_groups = array_values(array_filter($form_state->getValues()['access-control']['node']['access-control']));
 
-        // untag field access terms in node level first
+        // clearing group relation with islandora object
+        Utilities::clear_group_relation_by_entity($node);
+
+        // clear field_access_terms in media level
         Utilities::untag_existed_field_access_terms($node);
 
-        // clearing group relation with islandora object
-        Utilities::clear_group_relation_by_islandora_object($node);
-
-        $i = 0;
-        foreach ($node->get('field_access_terms')->referencedEntities() as $term) {
-            if ($node->get("field_access_terms")->get($i) !== null) {
-                $node->get("field_access_terms")->removeItem($i);
-            }
-            $i++;
-        }
         // set selected term id
-        foreach ($selected_groups as $group_id) {
-            $node->field_access_terms[] = ['target_id' => $group_id];
+        $targets = [];
+        foreach ($selected_groups as $term_id) {
+            $targets[] = ['target_id' => $term_id];
         }
-        $node->save();
-
+        if (count($targets) > 0) {
+            $node->set('field_access_terms', $targets);
+            $node->save();
+        }
         // add this node to group
         Utilities::adding_islandora_object_to_group($node);
 
 
+
+
+        // get selected media
         $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
         foreach ($selected_media as $media_id) {
             $media = Media::load($media_id);
 
-            foreach ($selected_groups as $group_id) {
-                $media->field_access_terms[] = ['target_id' => $group_id];
+            // clear field_access_terms in media level
+            Utilities::untag_existed_field_access_terms($media);
+
+            if (count($targets) > 0) {
+                $media->set('field_access_terms', $targets);
+                $media->save();
             }
-            $media->save();
             Utilities::adding_media_only_into_group($media);
         }
-
-
-
     }
 
 }
