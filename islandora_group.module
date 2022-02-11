@@ -116,11 +116,10 @@ function islandora_group_node_insert(NodeInterface $node) {
  * Implements hook_node_update().
  */
 function islandora_group_node_update(NodeInterface $node) {
-    Utilities::print_log("islandora_group_islandora_object_update");
     // add this node to group
-    if (count(GroupContent::loadByEntity($node)) <= 0) {
+    /*if (count(GroupContent::loadByEntity($node)) <= 0) {
         Utilities::adding_islandora_object_to_group($node);
-    }
+    }*/
 }
 
 /**
@@ -138,8 +137,8 @@ function islandora_group_media_insert(MediaInterface $media) {
  */
 function islandora_group_media_update(MediaInterface $media) {
     // add this node to group
-    if (count(GroupContent::loadByEntity($media)) <= 0) {
+    /*if (count(GroupContent::loadByEntity($media)) <= 0) {
         Utilities::adding_media_only_into_group($media);
-    }
+    }*/
 }
 

@@ -200,10 +200,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
             $node->save();
         }
         // add this node to group
-        //Utilities::adding_islandora_object_to_group($node);
-
-
-
+        Utilities::adding_islandora_object_to_group($node);
 
         // get selected media
         $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
@@ -217,7 +214,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $media->set('field_access_terms', $targets);
                 $media->save();
             }
-            //Utilities::adding_media_only_into_group($media);
+            Utilities::adding_media_only_into_group($media);
         }
 
 
@@ -238,7 +235,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $child->save();
             }
             // add this node to group
-            //Utilities::adding_islandora_object_to_group($child);
+            Utilities::adding_islandora_object_to_group($child);
 
             // TODO : UI configure add child's media to group
             if ($form_state->getValues()['access-control']['children-nodes']['include-meida'] == true) {
@@ -252,7 +249,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                         $child_media->set('field_access_terms', $targets);
                         $child_media->save();
                     }
-                    //Utilities::adding_media_only_into_group($child_media);
+                    Utilities::adding_media_only_into_group($child_media);
                 }
             }
         }

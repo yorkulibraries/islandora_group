@@ -268,15 +268,16 @@ class Utilities {
             return;
         }
 
-        // clear group relation with media
-        self::clear_group_relation_by_entity($media);
-
         // get field_access_terms
         $terms = $media->get('field_access_terms')->referencedEntities();
         if (empty($terms)) {
             // no term, exit;
             return;
         }
+
+        // clear group relation with media
+        self::clear_group_relation_by_entity($media);
+
         // Arrange groups keyed by their name so we can look them up later.
         $groups_by_name = self::arrange_group_by_name();
 
@@ -287,10 +288,6 @@ class Utilities {
             }
         }
     }
-
-
-
-
 
     /**
      * Redirect to confirm form to add Children nodes to groups
