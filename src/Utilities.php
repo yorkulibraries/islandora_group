@@ -4,6 +4,7 @@ namespace Drupal\islandora_group;
 
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\facets\Exception\Exception;
 use Drupal\node\NodeInterface;
 use Drupal\group\Entity\GroupContent;
 use Drupal\media\MediaInterface;
@@ -121,18 +122,18 @@ class Utilities {
             return;
         }
 
-        // Arrange groups keyed by their name so we can look them up later.
-        $groups_by_name = self::arrange_group_by_name();
-
-        // clear out group relations with islandora_object first
-        self::clear_group_relation_by_entity($entity);
-
         // Get the access terms for the node.
         $node_terms = $entity->get('field_access_terms')->referencedEntities();
         if (empty($node_terms)) {
             // no term, exist
             return;
         }
+
+        // Arrange groups keyed by their name so we can look them up later.
+        $groups_by_name = self::arrange_group_by_name();
+
+        // clear out group relations with islandora_object first
+        self::clear_group_relation_by_entity($entity);
 
         // if there is terms in field_access_term
         foreach ($node_terms as $term) {
@@ -141,32 +142,6 @@ class Utilities {
                 $group->addContent($entity, 'group_node:' . $entity->bundle());
             }
         }
-
-        // Reindex media since things have changed.
-        /*foreach (\Drupal::service('islandora.utils')->getMedia($entity) as $media) {
-            //self::adding_media_of_islandora_object_to_group($entity, $media);
-
-            // check if media already has access_term, if no. ... apply the same as node
-            $media_terms = $media->get('field_access_terms')->referencedEntities();
-            if (count ($media_terms) <= 0){
-                //$media->set('field_access_terms', []);
-                self::untag_existed_field_access_terms($media);
-
-                // tag media with same terms as islandora_object
-                foreach ($node_terms as $term) {
-                    if (isset($groups_by_name[$term->label()])) {
-                        $media->field_access_terms[] = ['target_id' => $term->id()];
-                    }
-                }
-                $media->save();
-
-                // add media to group
-                self::adding_media_only_into_group($media);
-            }
-
-
-        }*/
-
     }
 
 
@@ -313,21 +288,7 @@ class Utilities {
         }
     }
 
-    /**
-     * Print log to apache log.
-     */
-    public static function print_log($thing) {
-        error_log(print_r($thing, TRUE), 0);
-    }
 
-    /**
-     * Print log to webpage.
-     */
-    public static function logging($thing) {
-        echo "<pre>";
-        print_r($thing);
-        echo "</pre>";
-    }
 
 
 
@@ -370,7 +331,23 @@ class Utilities {
     }
 
     /**
-     * Print log in Recent Log messages.
+     * DEBUG: Print log to apache log.
+     */
+    public static function print_log($thing) {
+        error_log(print_r($thing, TRUE), 0);
+    }
+
+    /**
+     * DEBUG: Print log to webpage.
+     */
+    public static function logging($thing) {
+        echo "<pre>";
+        print_r($thing);
+        echo "</pre>";
+    }
+
+    /**
+     * DEBUG: Print log in Recent Log messages.
      */
     public static function drupal_log($msg, $type = "error") {
         switch ($type) {
@@ -412,6 +389,153 @@ class Utilities {
         }
     }
 
+    /**
+     * Custom function form_alter
+     * @return void
+     */
+    public function cus_form_alter() {
+        if ($form_id === "node_islandora_object_edit_form") {
+           // when update node form
+           $form['actions']['submit']['#submit'][] = 'form_submit_update_tagging_node_to_group';
+       }
+       else if ($form_id === "node_islandora_object_form") {
+           // when insert node form
+           $form['actions']['submit']['#submit'][] = 'form_submit_insert_tagging_node_to_group';
+       }
+       else if (str_starts_with($form_id, "media_")  && str_ends_with($form_id, "_edit_form")) {
+           // when update media form
+           $form['actions']['submit']['#submit'][] = 'form_submit_update_tagging_media_to_group';
+       }
+       else if (str_starts_with($form_id, "media_")  && str_ends_with($form_id, "_add_form")) {
+           // when insert update
+           $form['actions']['submit']['#submit'][] = 'form_submit_insert_tagging_media_to_group';
+       }
+    }
 
+    /**
+     * Form submit insert tagging media to group at /media/{{id}}/add
+     * @param $form
+     * @param $form_state
+     * @return void
+     */
+    public static function form_submit_insert_tagging_media_to_group($form, $form_state) {
+        // For media has parent node, but has different acess term set
+        /** @var \Drupal\Core\Entity\EntityForm $form_object */
+        $form_object = $form_state->getFormObject();
+        if ($form_object instanceof EntityForm) {
+            $media = $form_object->getEntity();
+
+            // add media only to group
+            Utilities::adding_media_only_into_group($media);
+        }
+    }
+
+    /**
+     * Form submit update tagging media to groups at /media/{{id}}/edit
+     * @param $form
+     * @param $form_state
+     * @return void
+     * @throws \Drupal\Core\Entity\EntityStorageException
+     */
+    public static function form_submit_update_tagging_media_to_group($form, $form_state) {
+        // For media has parent node, but has different acess term set
+        /** @var \Drupal\Core\Entity\EntityForm $form_object */
+        $form_object = $form_state->getFormObject();
+        if ($form_object instanceof EntityForm) {
+            $media = $form_object->getEntity();
+
+            // add media only to group
+            Utilities::adding_media_only_into_group($media);
+        }
+    }
+
+    /**
+     * @param $form
+     * @param $form_state
+     * @return void
+     */
+    public static function form_submit_delete_relation_untagging_entity_to_group($form, $form_state) {
+        /** @var \Drupal\Core\Entity\EntityForm $form_object */
+        $form_object = $form_state->getFormObject();
+        if ($form_object instanceof EntityForm) {
+            $entity = $form_object->getEntity();
+            if ($entity->getEntityTypeId() === 'group_content') {
+                $group_content = $entity;
+                $group = $group_content->getGroup();
+                if ($entity->getEntity()->getEntityTypeId() === "node") {
+                    $node = $group_content->getEntity();
+
+                    // update field access terms in node level
+                    Utilities::clear_term_in_field_access_terms($node, $group->label());
+                }
+                else if ($entity->getEntity()->getEntityTypeId() === "media") {
+                    $media = $group_content->getEntity();
+
+                    // update field access terms in media level
+                    Utilities::clear_term_in_field_access_terms($media, $group->label());
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Override form submit when tagging node to group when insert at /node/add
+     * @param $form
+     * @param $form_state
+     * @return void
+     */
+    public static function form_submit_insert_tagging_node_to_group($form, $form_state) {
+        /** @var \Drupal\Core\Entity\EntityForm $form_object */
+        $form_object = $form_state->getFormObject();
+        if ($form_object instanceof EntityForm) {
+
+            // get the entity from form
+            $entity = $form_object->getEntity();
+
+            // add node to group
+            Utilities::adding_islandora_object_to_group($entity);
+        }
+    }
+
+    /**
+     * Override form submit for edit form at /node/nid/edit
+     * @param $form
+     * @param $form_state
+     * @return void
+     * @throws \Drupal\Core\Entity\EntityStorageException
+     */
+    function form_submit_update_tagging_node_to_group($form, $form_state) {
+        /** @var \Drupal\Core\Entity\EntityForm $form_object */
+        $form_object = $form_state->getFormObject();
+        if ($form_object instanceof EntityForm) {
+
+            // get the entity from form
+            $entity = $form_object->getEntity();
+
+            // add node to group
+            Utilities::adding_islandora_object_to_group($entity);
+
+            // redirect if the islandora_object is a collection
+            Utilities::redirect_adding_childrennode_to_group($form, $form_state, $entity);
+        }
+
+    }
+
+    public static function generateCallTrace()
+    {
+        // Create an exception
+        $ex = new Exception();
+
+        // Call getTrace() function
+        $trace = $ex->getTrace();
+
+        // Position 0 would be the line
+        // that called this function
+        $final_call = $trace[1];
+
+        // Display associative array
+        return$final_call;
+    }
 
 }

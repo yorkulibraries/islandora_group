@@ -65,13 +65,13 @@ class IsandoraObjectAccessControlForm extends FormBase {
         ];
         $form['access-control']['node'] = [
             '#type' => 'details',
-            '#title' => $this->t("Node"),
+            '#title' => $this->t($node->getTitle()),
             '#open' => TRUE,
         ];
         $form['access-control']['node']['access-control'] = [
             '#type' => 'checkboxes',
             '#options' => $group_terms,
-            '#title' => $this->t('Select group(s) to add this node: '),
+            '#title' => $this->t('Select group(s) to add to: '),
             '#default_value' => $node_term_default
         ];
 
@@ -184,11 +184,11 @@ class IsandoraObjectAccessControlForm extends FormBase {
         // get selected group
         $selected_groups = array_values(array_filter($form_state->getValues()['access-control']['node']['access-control']));
 
-        // clearing group relation with islandora object
-        Utilities::clear_group_relation_by_entity($node);
-
-        // clear field_access_terms in media level
+        // 1. clear field_access_terms in media level
         Utilities::untag_existed_field_access_terms($node);
+
+        // 2. clearing group relation with islandora object
+        Utilities::clear_group_relation_by_entity($node);
 
         // set selected term id
         $targets = [];
@@ -200,7 +200,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
             $node->save();
         }
         // add this node to group
-        Utilities::adding_islandora_object_to_group($node);
+        //Utilities::adding_islandora_object_to_group($node);
 
 
 
@@ -217,7 +217,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $media->set('field_access_terms', $targets);
                 $media->save();
             }
-            Utilities::adding_media_only_into_group($media);
+            //Utilities::adding_media_only_into_group($media);
         }
 
 
@@ -238,7 +238,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $child->save();
             }
             // add this node to group
-            Utilities::adding_islandora_object_to_group($child);
+            //Utilities::adding_islandora_object_to_group($child);
 
             // TODO : UI configure add child's media to group
             if ($form_state->getValues()['access-control']['children-nodes']['include-meida'] == true) {
@@ -252,7 +252,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                         $child_media->set('field_access_terms', $targets);
                         $child_media->save();
                     }
-                    Utilities::adding_media_only_into_group($child_media);
+                    //Utilities::adding_media_only_into_group($child_media);
                 }
             }
         }
