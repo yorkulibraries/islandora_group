@@ -106,6 +106,7 @@ function islandora_group_media_delete(MediaInterface $media) {
  * Implements hook_node_insert().
  */
 function islandora_group_node_insert(NodeInterface $node) {
+
     // add this node to group
     if (count(GroupContent::loadByEntity($node)) <= 0) {
         Utilities::adding_islandora_object_to_group($node);

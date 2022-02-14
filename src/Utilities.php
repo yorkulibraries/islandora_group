@@ -122,6 +122,9 @@ class Utilities {
             return;
         }
 
+        // clear out group relations with islandora_object first
+        self::clear_group_relation_by_entity($entity);
+
         // Get the access terms for the node.
         $node_terms = $entity->get('field_access_terms')->referencedEntities();
         if (empty($node_terms)) {
@@ -131,9 +134,6 @@ class Utilities {
 
         // Arrange groups keyed by their name so we can look them up later.
         $groups_by_name = self::arrange_group_by_name();
-
-        // clear out group relations with islandora_object first
-        self::clear_group_relation_by_entity($entity);
 
         // if there is terms in field_access_term
         foreach ($node_terms as $term) {
@@ -190,7 +190,6 @@ class Utilities {
         // if there is terms, loop through and add media group
         foreach ($terms as $term) {
             if (isset($groups_by_name[$term->label()])) {
-                self::print_log("tagging and add media to group");
                 $group = $groups_by_name[$term->label()];
                 $group->addContent($media, 'group_media:' . $media->bundle());
 
@@ -236,7 +235,6 @@ class Utilities {
         if (!$entity->hasField('field_access_terms')) {
             return;
         }
-
         // for each term, loop through groups-entity
         foreach (GroupContent::loadByEntity($entity) as $group_content) {
             $group_content->delete();
@@ -268,15 +266,15 @@ class Utilities {
             return;
         }
 
+        // clear group relation with media
+        self::clear_group_relation_by_entity($media);
+
         // get field_access_terms
         $terms = $media->get('field_access_terms')->referencedEntities();
         if (empty($terms)) {
             // no term, exit;
             return;
         }
-
-        // clear group relation with media
-        self::clear_group_relation_by_entity($media);
 
         // Arrange groups keyed by their name so we can look them up later.
         $groups_by_name = self::arrange_group_by_name();
