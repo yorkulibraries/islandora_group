@@ -22,14 +22,6 @@ class IsandoraObjectAccessControlForm extends FormBase {
      */
     public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $node = NULL) {
         // Get the access terms for the node.
-        $groups_by_name = Utilities::arrange_group_by_name();
-        $group_options = [];
-        foreach ($groups_by_name as $group_id => $group) {
-            $group_options[$group_id] = $group->label() . "  <a href='$group_id' target='_blank'>View permissions</a>" ;
-        }
-
-
-
         $options_available_media = [];
         $options_unvailable_media = [];
         foreach (\Drupal::service('islandora.utils')->getMedia($node) as $media) {
@@ -200,7 +192,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
             $node->save();
         }
         // add this node to group
-        Utilities::adding_islandora_object_to_group($node);
+        //Utilities::adding_islandora_object_to_group($node);
 
         // get selected media
         $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
@@ -214,7 +206,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $media->set('field_access_terms', $targets);
                 $media->save();
             }
-            Utilities::adding_media_only_into_group($media);
+            //Utilities::adding_media_only_into_group($media);
         }
 
 
@@ -235,7 +227,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $child->save();
             }
             // add this node to group
-            Utilities::adding_islandora_object_to_group($child);
+            //Utilities::adding_islandora_object_to_group($child);
 
             // TODO : UI configure add child's media to group
             if ($form_state->getValues()['access-control']['children-nodes']['include-meida'] == true) {
@@ -249,7 +241,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
                         $child_media->set('field_access_terms', $targets);
                         $child_media->save();
                     }
-                    Utilities::adding_media_only_into_group($child_media);
+                    //Utilities::adding_media_only_into_group($child_media);
                 }
             }
         }

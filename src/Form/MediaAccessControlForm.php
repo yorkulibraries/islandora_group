@@ -22,16 +22,6 @@ class MediaAccessControlForm extends FormBase {
      */
     public function buildForm(array $form, FormStateInterface $form_state, MediaInterface $media = NULL) {
         // Get the access terms for the node.
-        $groups_by_name = Utilities::arrange_group_by_name();
-        $group_options = [];
-        foreach ($groups_by_name as $group_id => $group) {
-            $group_options[$group_id] = $group->label() . "  <a href='$group_id' target='_blank'>View permissions</a>" ;
-        }
-
-
-
-
-
         $group_terms = Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
         $media_terms = $media->get('field_access_terms')->referencedEntities();
@@ -101,7 +91,7 @@ class MediaAccessControlForm extends FormBase {
                 $media->save();
             }
             // add media to selected group
-            Utilities::adding_media_only_into_group($media);
+            //Utilities::adding_media_only_into_group($media);
         }
 
 

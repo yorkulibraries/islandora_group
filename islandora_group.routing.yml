@@ -34,3 +34,4 @@ islandora_group.media.access_control:
     parameters:
       node:
         type: entity:node
+

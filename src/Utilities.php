@@ -519,20 +519,19 @@ class Utilities {
 
     }
 
-    public static function generateCallTrace()
-    {
-        // Create an exception
-        $ex = new Exception();
-
-        // Call getTrace() function
-        $trace = $ex->getTrace();
-
-        // Position 0 would be the line
-        // that called this function
-        $final_call = $trace[1];
-
-        // Display associative array
-        return$final_call;
+    //public static function generateCallTrace()
+    public static function isCalledFromGroupModule(){
+        $backtrace = debug_backtrace();
+        $redudent = false;
+        while ($frame = next($backtrace)) {
+            if (isset($frame['function'])
+                && $frame['class'] === 'Drupal\\group\\Entity\\Group'
+                && $frame['function'] === 'addContent') {
+                $redudent = true;
+                break;
+            }
+        }
+        return $redudent;
     }
 
 }
