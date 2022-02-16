@@ -10,10 +10,56 @@ use Drupal\group\Entity\GroupContent;
 use Drupal\media\MediaInterface;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\media\Entity\Media;
+
+
 /**
  * Helper functions.
  */
 class Utilities {
+
+
+    /**
+     * @param $nid
+     * @param $selected_groups
+     * @return void
+     * @throws \Drupal\Core\Entity\EntityStorageException
+     */
+    public static function taggingFieldAccessTermsNode($nid, $targets) {
+        // get the node
+        $node = \Drupal\node\Entity\Node::load($nid);
+
+        // 1. clear field_access_terms in media level
+        Utilities::untag_existed_field_access_terms($node);
+
+        // 2. clearing group relation with islandora object
+        Utilities::clear_group_relation_by_entity($node);
+
+
+        if (count($targets) > 0) {
+            $node->set('field_access_terms', $targets);
+            $node->save();
+        }
+        // add this node to group
+        Utilities::adding_islandora_object_to_group($node);
+    }
+
+    /**
+     * @param $media_id
+     * @param $targets
+     * @return void
+     */
+    public static function taggingFieldAccessTermMedia($media, $targets) {
+
+        // clear field_access_terms in media level
+        Utilities::untag_existed_field_access_terms($media);
+
+        if (count($targets) > 0) {
+            $media->set('field_access_terms', $targets);
+            $media->save();
+        }
+        Utilities::adding_media_only_into_group($media);
+    }
 
     /**
      * Get Islandora Access terms associated with Groups
@@ -523,8 +569,10 @@ class Utilities {
         $redudent = false;
 
         while ($frame = next($backtrace)) {
-            if (isset($frame['class'])
-                && (strpos($frame['class'], 'Drupal\\group') !== false)){
+            self::print_log($frame['function']);
+            if ( (isset($frame['class']) && (strpos($frame['class'], 'Drupal\\group') !== false))
+            || (isset($frame['class']) && $frame['function'] === 'taggingFieldAccessTermsNode')
+            || (isset($frame['class']) && $frame['function'] === 'taggingFieldAccessTermMedia')){
                 $redudent = true;
                 break;
             }

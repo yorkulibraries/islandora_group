@@ -91,7 +91,7 @@ class MediaAccessControlForm extends FormBase {
                 $media->save();
             }
             // add media to selected group
-            //Utilities::adding_media_only_into_group($media);
+            Utilities::adding_media_only_into_group($media);
         }
 
 

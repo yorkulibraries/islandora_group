@@ -6,7 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\islandora_group\Utilities;
 use Drupal\node\NodeInterface;
 use Drupal\media\Entity\Media;
-use Drupal\taxonomy\Entity\Term;
+use Drupal\node\Entity\Node;
 
 class IsandoraObjectAccessControlForm extends FormBase {
 
@@ -72,6 +72,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
             '#title' => $this->t("Media"),
             '#open' => TRUE,
         ];
+
         if (count($options_available_media) > 0) {
             $form['access-control']['media']['access-control'] = [
                 '#type' => 'checkboxes',
@@ -81,7 +82,6 @@ class IsandoraObjectAccessControlForm extends FormBase {
             ];
         }
 
-
         if (count($options_unvailable_media) > 0) {
             $form['access-control']['media']['not-access-control'] = [
                 '#type' => 'checkboxes',
@@ -90,6 +90,10 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 '#default_value' => array_keys($options_unvailable_media),
                 '#disabled' => true
             ];
+            $form['access-control']['media']['override'] = array(
+                '#type' => 'checkbox',
+                '#title' => $this->t('Override access control.'),
+            );
         }
 
 
@@ -131,18 +135,21 @@ class IsandoraObjectAccessControlForm extends FormBase {
                     '#default_value' => array_keys($options_unvailable_children),
                     '#disabled' => true
                 ];
+                $form['access-control']['children-nodes']['override'] = array(
+                    '#type' => 'checkbox',
+                    '#title' => $this->t('Override access control.'),
+                );
             }
 
             if (count($options_available_children) > 0) {
-                $form['access-control']['children-nodes']['include-meida'] = array(
-                    '#type' => 'checkbox',
-                    '#title' => $this->t('Include their media as well.'),
-                );
-
                 $form['access-control']['children-nodes']['access-control'] = array(
                     '#type' => 'checkboxes',
                     '#options' => $options_available_children,
                     '#title' => $this->t('Select the following children nodes:'),
+                );
+                $form['access-control']['children-nodes']['include-media'] = array(
+                    '#type' => 'checkbox',
+                    '#title' => $this->t('Include their media as well.'),
                 );
             }
         }
@@ -158,93 +165,79 @@ class IsandoraObjectAccessControlForm extends FormBase {
     /**
      * {@inheritdoc}
      */
-    /*public function validateForm(array &$form, FormStateInterface $form_state) {
-        $selected_groups = array_values(array_filter($form_state->getValues()['access-control']['node']['access-control']));
-        if (isset($selected_groups) && count($selected_groups) <= 0) {
-            $form_state->setErrorByName('access-control', $this->t('Please select the group(s) to apply for this node and its content'));
-        }
-    }*/
-
-    /**
-     * {@inheritdoc}
-     */
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
-        // get the node
-        $node = \Drupal\node\Entity\Node::load($form_state->getValues()['nid']);
-
         // get selected group
         $selected_groups = array_values(array_filter($form_state->getValues()['access-control']['node']['access-control']));
-
-        // 1. clear field_access_terms in media level
-        Utilities::untag_existed_field_access_terms($node);
-
-        // 2. clearing group relation with islandora object
-        Utilities::clear_group_relation_by_entity($node);
 
         // set selected term id
         $targets = [];
         foreach ($selected_groups as $term_id) {
             $targets[] = ['target_id' => $term_id];
         }
-        if (count($targets) > 0) {
-            $node->set('field_access_terms', $targets);
-            $node->save();
-        }
-        // add this node to group
-        //Utilities::adding_islandora_object_to_group($node);
+
+        // tagging the parent node level
+        Utilities::taggingFieldAccessTermsNode($form_state->getValues()['nid'], $targets);
+
 
         // get selected media
         $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
         foreach ($selected_media as $media_id) {
             $media = Media::load($media_id);
-
-            // clear field_access_terms in media level
-            Utilities::untag_existed_field_access_terms($media);
-
-            if (count($targets) > 0) {
-                $media->set('field_access_terms', $targets);
-                $media->save();
-            }
-            //Utilities::adding_media_only_into_group($media);
+            // tag the selected media of the node
+            Utilities::taggingFieldAccessTermMedia($media, $targets);
         }
 
+        // handle override
+        if ($form_state->getValues()['access-control']['media']['override'] == true) {
+            // Override the access control for already set media
+            $override_media = array_values(array_filter($form_state->getValues()['access-control']['media']['not-access-control']));
+            foreach ($override_media as $omid) {
+                $media = Media::load($omid);
+                // tag the override media
+                Utilities::taggingFieldAccessTermMedia($media, $targets);
+            }
+        }
 
+        // for children node
         $children_nodes = array_values(array_filter($form_state->getValues()['access-control']['children-nodes']['access-control']));
         foreach ($children_nodes as $cnid) {
             // get selected child node
-            $child = \Drupal\node\Entity\Node::load($cnid);
+            $child = Node::load($cnid);
 
-            // clearing group relation with islandora object
-            Utilities::clear_group_relation_by_entity($child);
-
-            // clear field_access_terms in media level
-            Utilities::untag_existed_field_access_terms($child);
-
-            // set selected term id
-            if (count($targets) > 0) {
-                $child->set('field_access_terms', $targets);
-                $child->save();
-            }
-            // add this node to group
-            //Utilities::adding_islandora_object_to_group($child);
+            // tagging the child node
+            Utilities::taggingFieldAccessTermsNode($cnid, $targets);
 
             // TODO : UI configure add child's media to group
-            if ($form_state->getValues()['access-control']['children-nodes']['include-meida'] == true) {
+            if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
                 $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                 foreach ($child_medias as $child_media) {
-
-                    // clear field_access_terms in media level
-                    Utilities::untag_existed_field_access_terms($child_media);
-
-                    if (count($targets) > 0) {
-                        $child_media->set('field_access_terms', $targets);
-                        $child_media->save();
-                    }
-                    //Utilities::adding_media_only_into_group($child_media);
+                    Utilities::taggingFieldAccessTermMedia($child_media, $targets);
                 }
             }
         }
+
+        // for override children nodes
+        if ($form_state->getValues()['access-control']['children-nodes']['override'] == true) {
+            // Override the access control for already set media
+            $override_childnodes = array_values(array_filter($form_state->getValues()['access-control']['children-nodes']['not-access-control']));
+            foreach ($override_childnodes as $cnid) {
+                // get selected child node
+                $child = Node::load($cnid);
+
+                // tagging the child node
+                Utilities::taggingFieldAccessTermsNode($cnid, $targets);
+
+                // TODO : UI configure add child's media to group
+                if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
+                    $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
+                    foreach ($child_medias as $child_media) {
+                        Utilities::taggingFieldAccessTermMedia($child_media, $targets);
+                    }
+                }
+            }
+        }
+
     }
 
 }
