@@ -569,7 +569,6 @@ class Utilities {
         $redudent = false;
 
         while ($frame = next($backtrace)) {
-            self::print_log($frame['function']);
             if ( (isset($frame['class']) && (strpos($frame['class'], 'Drupal\\group') !== false))
             || (isset($frame['class']) && $frame['function'] === 'taggingFieldAccessTermsNode')
             || (isset($frame['class']) && $frame['function'] === 'taggingFieldAccessTermMedia')){

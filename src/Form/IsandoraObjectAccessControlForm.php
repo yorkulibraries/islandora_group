@@ -177,15 +177,17 @@ class IsandoraObjectAccessControlForm extends FormBase {
         }
 
         // tagging the parent node level
-        Utilities::taggingFieldAccessTermsNode($form_state->getValues()['nid'], $targets);
-
+        $operations = array(
+            array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($form_state->getValues()['nid'], $targets)),
+        );
 
         // get selected media
         $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
         foreach ($selected_media as $media_id) {
             $media = Media::load($media_id);
+
             // tag the selected media of the node
-            Utilities::taggingFieldAccessTermMedia($media, $targets);
+            $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($media, $targets));
         }
 
         // handle override
@@ -195,7 +197,7 @@ class IsandoraObjectAccessControlForm extends FormBase {
             foreach ($override_media as $omid) {
                 $media = Media::load($omid);
                 // tag the override media
-                Utilities::taggingFieldAccessTermMedia($media, $targets);
+                $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($media, $targets));
             }
         }
 
@@ -206,13 +208,13 @@ class IsandoraObjectAccessControlForm extends FormBase {
             $child = Node::load($cnid);
 
             // tagging the child node
-            Utilities::taggingFieldAccessTermsNode($cnid, $targets);
+            $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($cnid, $targets));
 
             // TODO : UI configure add child's media to group
             if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
                 $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                 foreach ($child_medias as $child_media) {
-                    Utilities::taggingFieldAccessTermMedia($child_media, $targets);
+                    $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
                 }
             }
         }
@@ -226,18 +228,25 @@ class IsandoraObjectAccessControlForm extends FormBase {
                 $child = Node::load($cnid);
 
                 // tagging the child node
-                Utilities::taggingFieldAccessTermsNode($cnid, $targets);
+                $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($cnid, $targets));
 
                 // TODO : UI configure add child's media to group
                 if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
                     $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                     foreach ($child_medias as $child_media) {
-                        Utilities::taggingFieldAccessTermMedia($child_media, $targets);
+                        $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
                     }
                 }
             }
         }
 
+        $batch = array(
+            'title' => t('Applying access control...'),
+            'operations' => $operations,
+            'finished' => 'islandora_group_batch_finished',
+            'progress_message' => $this->t('Applied @current out of @total.'),
+            'error_message' => $this->t('Access control has encountered an error.'),
+        );
+        batch_set($batch);
     }
-
 }
