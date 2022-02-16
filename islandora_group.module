@@ -106,9 +106,9 @@ function islandora_group_media_delete(MediaInterface $media) {
  * Implements hook_node_insert().
  */
 function islandora_group_node_insert(NodeInterface $node) {
-
+    Utilities::print_log("islandora_group_node_insert");
     // add this node to group
-    if (count(GroupContent::loadByEntity($node)) <= 0) {
+    if (!Utilities::isCalledFromGroupModule()) {
         Utilities::adding_islandora_object_to_group($node);
     }
 }
@@ -117,6 +117,7 @@ function islandora_group_node_insert(NodeInterface $node) {
  * Implements hook_node_update().
  */
 function islandora_group_node_update(NodeInterface $node) {
+    Utilities::print_log("islandora_group_node_update");
     if (!Utilities::isCalledFromGroupModule()) {
         Utilities::adding_islandora_object_to_group($node);
     }
@@ -126,8 +127,9 @@ function islandora_group_node_update(NodeInterface $node) {
  * Implements hook_media_insert().
  */
 function islandora_group_media_insert(MediaInterface $media) {
+    Utilities::print_log("islandora_group_media_insert");
     // add this node to group
-    if (count(GroupContent::loadByEntity($media)) <= 0) {
+    if (!Utilities::isCalledFromGroupModule()) {
         Utilities::adding_media_only_into_group($media);
     }
 }
@@ -136,6 +138,7 @@ function islandora_group_media_insert(MediaInterface $media) {
  * Implements hook_media_update().
  */
 function islandora_group_media_update(MediaInterface $media) {
+    Utilities::print_log("islandora_group_media_update");
     // add this node to group
     if (!Utilities::isCalledFromGroupModule()) {
         Utilities::adding_media_only_into_group($media);

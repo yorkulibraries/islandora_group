@@ -521,14 +521,15 @@ class Utilities {
     public static function isCalledFromGroupModule(){
         $backtrace = debug_backtrace();
         $redudent = false;
+
         while ($frame = next($backtrace)) {
-            if (isset($frame['function'])
-                && $frame['class'] === 'Drupal\\group\\Entity\\Group'
-                && $frame['function'] === 'addContent') {
+            if (isset($frame['class'])
+                && (strpos($frame['class'], 'Drupal\\group') !== false)){
                 $redudent = true;
                 break;
             }
         }
+
         return $redudent;
     }
 
