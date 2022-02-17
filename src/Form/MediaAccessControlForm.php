@@ -67,6 +67,7 @@ class MediaAccessControlForm extends FormBase {
             '#options' => $group_terms,
             '#default_value' => $node_term_default,
             '#empty' => $this->t('No users found'),
+            '#prefix' => $this->t('<p><h3>Select which group(s) to add this media to:</h3></p>')
         );
 
         $form['submit'] = array(
