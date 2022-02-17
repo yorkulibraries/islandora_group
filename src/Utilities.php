@@ -83,6 +83,32 @@ class Utilities {
     }
 
     /**
+     * Get Islandora Access terms associated with Groups
+     * @return array
+     * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+     * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+     */
+    public static function getIslandoraAccessTermsinTable() {
+        // create the taxonomy term which has the same name as Group Name
+        $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree("islandora_access");
+        $groups = self::arrange_group_by_name();
+        $group_members = self::getGroupMembers();
+        $result = [];
+        foreach ($terms as $term) {
+            if (in_array($term->name, array_keys($groups))) {
+                $group = $groups[$term->name];
+                $result[$term->tid] = [
+                    'group_id' => $group->id(),
+                    'group_name' => $term->name,
+                    "group_permission" => t("<a href='/group/".$group->id()."/permissions' target='_blank'>Configure permissions</a>"),
+                    'group_member' => t($group_members[$group->id()]),
+                ];
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Create a taxonomy term which is the same name with Group
      * @param \Drupal\Core\Entity\EntityInterface $entity
      * @return void
@@ -297,9 +323,23 @@ class Utilities {
             $entity->set('field_access_terms', []);
             $entity->save();
         }
-
     }
 
+    public static function getGroupMembers(){
+        // Arrange groups keyed by their name so we can look them up later.
+        $groups = \Drupal::service('entity_type.manager')->getStorage('group')->loadMultiple();
+        $group_members = [];
+        foreach ($groups as $group) {
+            $members = "";
+            foreach ($group->getMembers() as $gm) {
+                $user = $gm->getUser();
+                $members .= $user->getAccountName() . ", ";
+            }
+            $members .= '<p><a href="/group/'.$group->id().'/members" target="_blank">Configure</a></p>';
+            $group_members[$group->id()] = $members;
+        }
+        return $group_members;
+    }
 
     /**
      * Tag a media in to Group

@@ -22,13 +22,18 @@ class MediaAccessControlForm extends FormBase {
      */
     public function buildForm(array $form, FormStateInterface $form_state, MediaInterface $media = NULL) {
         // Get the access terms for the node.
-        $group_terms = Utilities::getIslandoraAccessTerms();
+        $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
-        $media_terms = $media->get('field_access_terms')->referencedEntities();
-        if (!empty($media_terms)) {
+        $node_terms = $media->get('field_access_terms')->referencedEntities();
+        if (!empty($node_terms)) {
             // no term, exist
-            foreach ($media_terms as $nt) {
-                $node_term_default[] = $nt->id();
+            foreach ($node_terms as $nt) {
+                if (in_array($nt->id(), array_keys($group_terms))) {
+                    $node_term_default[$nt->id()] = TRUE;
+                }
+                else {
+                    $node_term_default[$nt->id()] = FALSE;
+                }
             }
         }
 
@@ -48,12 +53,21 @@ class MediaAccessControlForm extends FormBase {
             '#title' => $this->t("Access control with Groups"),
             '#open' => TRUE,
         ];
-        $form['access-control']['media']['access-control'] = [
-            '#type' => 'checkboxes',
-            '#options' => $group_terms,
-            '#title' => $this->t('Adding this node to the following groups: '),
-            '#default_value' => $node_term_default
+
+        $header = [
+            'group_id' => $this->t('Group ID'),
+            'group_name' => $this->t('Group Name'),
+            'group_permission' => $this->t('Permission'),
+            'group_member' => $this->t('Users'),
         ];
+
+        $form['access-control']['media']['access-control'] = array(
+            '#type' => 'tableselect',
+            '#header' => $header,
+            '#options' => $group_terms,
+            '#default_value' => $node_term_default,
+            '#empty' => $this->t('No users found'),
+        );
 
         $form['submit'] = array(
             '#type' => 'submit',

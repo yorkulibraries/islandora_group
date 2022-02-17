@@ -34,16 +34,20 @@ class IsandoraObjectAccessControlForm extends FormBase {
             }
         }
 
-        $group_terms = Utilities::getIslandoraAccessTerms();
+        $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
         $node_terms = $node->get('field_access_terms')->referencedEntities();
         if (!empty($node_terms)) {
             // no term, exist
             foreach ($node_terms as $nt) {
-                $node_term_default[] = $nt->id();
+                if (in_array($nt->id(), array_keys($group_terms))) {
+                    $node_term_default[$nt->id()] = TRUE;
+                }
+                else {
+                    $node_term_default[$nt->id()] = FALSE;
+                }
             }
         }
-
         $form = [];
         $form['#title'] = t($node->getTitle() . ' Repository Item Access Control');
         $form['#tree'] = true;
@@ -60,12 +64,27 @@ class IsandoraObjectAccessControlForm extends FormBase {
             '#title' => $this->t($node->getTitle()),
             '#open' => TRUE,
         ];
-        $form['access-control']['node']['access-control'] = [
+        /*$form['access-control']['node']['access-control'] = [
             '#type' => 'checkboxes',
             '#options' => $group_terms,
             '#title' => $this->t('Select group(s) to add to: '),
             '#default_value' => $node_term_default
+        ];*/
+
+        $header = [
+            'group_id' => $this->t('Group ID'),
+            'group_name' => $this->t('Group Name'),
+            'group_permission' => $this->t('Permission'),
+            'group_member' => $this->t('Users'),
         ];
+
+        $form['access-control']['node']['access-control'] = array(
+            '#type' => 'tableselect',
+            '#header' => $header,
+            '#options' => $group_terms,
+            '#default_value' => $node_term_default,
+            '#empty' => $this->t('No users found'),
+        );
 
         $form['access-control']['media'] = [
             '#type' => 'details',
