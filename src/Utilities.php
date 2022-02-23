@@ -603,11 +603,14 @@ class Utilities {
 
     }
 
-    //public static function generateCallTrace()
+
+    /**
+     * Determine called from Group Module Strage save
+     * @return bool
+     */
     public static function isCalledFromGroupModule(){
         $backtrace = debug_backtrace();
         $redudent = false;
-
         while ($frame = next($backtrace)) {
             if ( (isset($frame['class']) && (strpos($frame['class'], 'Drupal\\group') !== false))
             || (isset($frame['class']) && $frame['function'] === 'taggingFieldAccessTermsNode')
@@ -616,7 +619,23 @@ class Utilities {
                 break;
             }
         }
+        return $redudent;
+    }
 
+    /**
+     * Determine called from ViewsBulkOperationsActionBase
+     * @return bool
+     */
+    public static function isCalledFromBulkBatch(){
+        $backtrace = debug_backtrace();
+        $redudent = false;
+        while ($frame = next($backtrace)) {
+            if ($frame['class'] === "Drupal\\views_bulk_operations\\Action\\ViewsBulkOperationsActionBase"
+                && $frame['function'] === "executeMultiple") {
+                $redudent = true;
+                break;
+            }
+        }
         return $redudent;
     }
 
