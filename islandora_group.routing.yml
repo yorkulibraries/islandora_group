@@ -35,3 +35,12 @@ islandora_group.media.access_control:
       node:
         type: entity:node
 
+islandora_group.config_form:
+  path: '/admin/config/islandora_group/config'
+  defaults:
+    _form: '\Drupal\islandora_group\Form\ConfigForm'
+    _title: 'Islandora Group Configuration'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE

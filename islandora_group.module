@@ -133,7 +133,6 @@ function islandora_group_node_update(NodeInterface $node) {
                 Utilities::taggingFieldAccessTermMedia($media, $targets);
             }
         }
-
     }
 }
 

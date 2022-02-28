@@ -1,0 +1,6 @@
+islandora_group.config_form:
+  title: 'Access Control with Group'
+  route_name: islandora_group.config_form
+  description: 'Config access control with Group modules'
+  parent: system.admin_config_system
+  weight: 99
