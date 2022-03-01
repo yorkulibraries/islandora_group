@@ -32,9 +32,7 @@ class Utilities {
                 && ($field->getSettings()['handler'] === "default:media")) {
                     $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
                     if (is_array($targets) && count($targets) > 0) {
-
                         $media_targets = $node->get($field->getName())->getValue();
-                        self::print_log($media_targets);
                         foreach ($media_targets as $mt) {
                             if(!empty($mt['target_id'])) {
                                 array_push($medias, Media::load($mt['target_id']));
@@ -176,7 +174,8 @@ class Utilities {
         $group_type = $entity->bundle();
 
         // get the Group associated taxonomy vocabulary
-        $taxonomy = "islandora_access";
+        $config = \Drupal::config(self::CONFIG_NAME);
+        $taxonomy = $config->get($group_type);
 
         $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($taxonomy);
 
