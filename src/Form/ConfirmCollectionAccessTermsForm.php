@@ -33,7 +33,6 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
         // get children nodes
         $query = \Drupal::entityQuery('node')
             ->condition('status', 1)
-            ->condition('type','islandora_object')
             ->condition('field_member_of', $this->id);
         $childrenNIDs = $query->execute();
 

@@ -22,6 +22,32 @@ class Utilities {
 
     /**
      * @param NodeInterface $node
+     * @return void
+     */
+    public static function getMedia(NodeInterface $node) {
+        $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', $node->bundle());
+        $medias = [];
+        foreach ($fields as $fname => $field) {
+            if ($field->getType() === "entity_reference"
+                && ($field->getSettings()['handler'] === "default:media")) {
+                    $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
+                    if (is_array($targets) && count($targets) > 0) {
+
+                        $media_targets = $node->get($field->getName())->getValue();
+                        self::print_log($media_targets);
+                        foreach ($media_targets as $mt) {
+                            if(!empty($mt['target_id'])) {
+                                array_push($medias, Media::load($mt['target_id']));
+                            }
+                        }
+                    }
+            }
+        }
+        return $medias;
+    }
+
+    /**
+     * @param NodeInterface $node
      * @return mixed
      */
     public static function getAccessControlFieldinNode(NodeInterface $node) {
