@@ -1,4 +1,4 @@
-# Islandora Group
+# Access control with Group
 
 Islandora Group extends access control with Drupal's [Group module](https://www.drupal.org/project/group)
 
@@ -11,7 +11,7 @@ Islandora Group extends access control with Drupal's [Group module](https://www.
 
 - By manually, run `git clone git@github.com:digitalutsc/islandora-group.git` to Drupal module directory. Then download the dependency modules in the next section bellow
 
-## To Configure
+## To Configure Group
 
 [More detail at here](https://docs.google.com/document/d/1fy2KyjlURBpseLbwqspD3Yv5iFPpv1HQF_qKClV7zso/edit?usp=sharing)
 
@@ -29,13 +29,37 @@ This module is based on work completed by Danny Lamb at [Born-Digital](https://w
 
 Install the module the following module: https://github.com/digitalutsc/islandora_group_defaults 
 
-## Status
+## How to setup this module
 
-- Currently, by tagging the node, it can add node and its media to a Group, then Group with configuration can take care of access control. 
-- **Automated**: 
-  - When a group is created, a taxonomy term with the same name as the group's name is created in `Islandora Access` vocabulary. 
-  - Experimenting with [Rules](https://www.drupal.org/project/rules) to have the automation of creating a group when Islandora object is created with Model field is set to "Collection", [more detail](https://docs.google.com/document/d/1Amof3KKEqe8EIjUiPQVVRQ8mqnhQQs1wTi_GnDhjYH8/edit?usp=sharing)
-- **Ongoing Issues**: 
-  - Unable to implement access control from Media level only, ie. restrict media only, but metadata can be opened for public. 
-  - Remove node/media from Group UI instead can be buggy which may lead to 500 error.  
-  - Effecting the search count of Search results in a Solr View (possibly from Group). 
+1. In content type(s) and media typ(s) which need to be applied access control, create an Entity Reference field which is referenced to Islandora Access Taxonomy Vocabulary.
+2. Visit `/admin/config/access-control/islandora_group` to select access control field for each entity of Drupal site. 
+
+### In Node
+
+1. In any node(s) which need to be applied access control, click on a tab "Access Control With Group".
+2. Select a Group for this node. 
+   * If a node has media, check the media which need to add them to the same Group along with the node.
+   * If a node has children nodes, check the child node which need to add them to the same Group along with the node.
+
+### In Media
+
+1. In media types(s) which need to be applied access control, create an Entity Reference field which reference to Islandora Access Taxonomy Vocabulary.
+2. In any media(s) which need to be applied access control, click on a tab "Access Control With Group".
+
+### In Bulk Batch Update
+
+1. How to setup: https://www.youtube.com/watch?v=ZMp0lPelOZw
+2. Bulk batch update on the access control field which you are setup for entities.
+
+### Work with Federated Search
+
+- Required modules: 
+  * Federated Search Front-end user interface: https://github.com/digitalutsc/drupal_ajax_solr 
+  * Add a Search Api Solr field for Access Control with Group: https://github.com/digitalutsc/group_solr
+
+- In `/admin/config/search/search-api/index/default_solr_index/fields`, Click Add fields > General > Group: Access Control (search_api_group_access_control) 
+- **How does it work ?** 
+  - Every time a node or media is indexed to Solr, this field will be processed by checking the access control configuration which is setup with Group module. It will determine the entity to be public or private for annonymous users
+  - Field's values to be indexed to Solr:
+    - Public: 200 
+    - Private: 403

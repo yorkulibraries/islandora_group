@@ -1,9 +1,10 @@
 {
     "name": "digitalutsc/islandora_group",
     "type": "drupal-module",
-    "description": "Islandora's Access Control with Group",
+    "description": "This module assists to manage access control for node and media with Group module",
     "keywords": [
     ],
+    "license": "GPL-2.0-or-later",
     "homepage": "https://www.drupal.org/project/islandora_group",
     "minimum-stability": "dev",
     "support": {
@@ -19,8 +20,31 @@
     "require": {
         "drupal/group": "^1.4",
         "drupal/groupmedia": "^2.0@alpha",
-        "islandora/islandora_defaults" : "^2.0",
         "drupal/group_permissions":"^1.0@alpha",
         "drupal/rules" : "^3.0@alpha"
+    },
+    "authors": [
+        {
+            "name": "The University of Toronto Scarborough Library's Digital Scholarship Unit (DSU)",
+            "email": "digitalscholarship@utsc.utoronto.ca",
+            "role": "Owner"
+        },
+        {
+            "name": "Kyle Huynh",
+            "email": "kyle.huynh205@gmail.com",
+            "role": "Maintainer"
+        }
+    ],
+    "scripts": {
+        "post-install-cmd": [
+            "./vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer"
+        ],
+        "post-update-cmd": [
+            "./vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer"
+        ],
+        "check": [
+            "./vendor/bin/phpcs --standard=Drupal --ignore=*.md,vendor --extensions=php,module,inc,install,test,profile,theme,css,info .",
+            "./vendor/bin/phpcpd --names='*.module,*.inc,*.test,*.php' --exclude=vendor ."
+        ]
     }
 }

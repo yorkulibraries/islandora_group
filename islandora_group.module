@@ -22,7 +22,7 @@ function islandora_group_help($route_name, RouteMatchInterface $route_match) {
         case 'help.page.islandora_group':
             $output = '';
             $output .= '<h3>' . t('About') . '</h3>';
-            $output .= '<p>' . t('My Awesome Module') . '</p>';
+            $output .= '<p>' . t('This module assist to manage access control for node and media with Group module') . '</p>';
             return $output;
 
         default:
