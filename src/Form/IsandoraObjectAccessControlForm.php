@@ -25,7 +25,10 @@ class IsandoraObjectAccessControlForm extends FormBase {
         $options_available_media = [];
         $options_unvailable_media = [];
         foreach (\Drupal::service('islandora.utils')->getMedia($node) as $media) {
-            $terms = $media->get('field_access_terms')->referencedEntities();
+            // get access control field from config
+            $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+
+            $terms = $media->get($access_control_field)->referencedEntities();
             if (count($terms) > 0) {
                 $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
             }
@@ -36,7 +39,11 @@ class IsandoraObjectAccessControlForm extends FormBase {
 
         $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
-        $node_terms = $node->get('field_access_terms')->referencedEntities();
+
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($node);
+
+        $node_terms = $node->get($access_control_field)->referencedEntities();
         if (!empty($node_terms)) {
             // no term, exist
             foreach ($node_terms as $nt) {
@@ -133,7 +140,10 @@ class IsandoraObjectAccessControlForm extends FormBase {
             foreach ($childrenNIDs as $cnid) {
                 $childNode = \Drupal::entityTypeManager()->getStorage('node')->load($cnid);
 
-                $childnode_terms = $childNode->get('field_access_terms')->referencedEntities();
+                // get access control field from config
+                $access_control_field = Utilities::getAccessControlFieldinNode($childNode);
+
+                $childnode_terms = $childNode->get($access_control_field)->referencedEntities();
                 if (count($childnode_terms) > 0) {
                     $options_unvailable_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
                 }

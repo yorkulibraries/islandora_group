@@ -123,7 +123,10 @@ function islandora_group_node_update(NodeInterface $node) {
 
         // Tag media with selected terms only while bulk batch update
         if (Utilities::isCalledFromBulkBatch()) {
-            $node_terms = $node->get('field_access_terms')->referencedEntities();
+            // get access control field from config
+            $access_control_field = Utilities::getAccessControlFieldinNode($node);
+
+            $node_terms = $node->get($access_control_field)->referencedEntities();
             $targets = [];
             foreach ($node_terms as $term) {
                 $targets[] = ['target_id' => $term->id()];

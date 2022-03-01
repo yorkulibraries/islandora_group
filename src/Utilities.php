@@ -12,12 +12,35 @@ use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\media\Entity\Media;
 
-
 /**
  * Helper functions.
  */
 class Utilities {
 
+    const CONFIG_NAME = 'islandora_group.config';
+    const CONFIG_TAXONOMY_VOCAL = 'islandora_group.taxonomy.vocabulary';
+
+    /**
+     * @param NodeInterface $node
+     * @return mixed
+     */
+    public static function getAccessControlFieldinNode(NodeInterface $node) {
+        self::print_log($node->bundle());
+        $config = \Drupal::config(Utilities::CONFIG_NAME);
+        $fields = (array)json_decode($config->get("node-type-access-fields"));
+        return $fields[$node->bundle()];
+    }
+
+    /**
+     * @param MediaInterface $media
+     * @return mixed
+     */
+    public static function getAccessControlFieldinMedia(MediaInterface $media) {
+        self::print_log($media->bundle());
+        $config = \Drupal::config(Utilities::CONFIG_NAME);
+        $fields = (array)json_decode($config->get("media-type-access-fields"));
+        return $fields[$media->bundle()];
+    }
 
     /**
      * @param $nid
@@ -37,7 +60,10 @@ class Utilities {
 
 
         if (count($targets) > 0) {
-            $node->set('field_access_terms', $targets);
+            // get access control field from config
+            $access_control_field = Utilities::getAccessControlFieldinNode($node);
+
+            $node->set($access_control_field, $targets);
             $node->save();
         }
         // add this node to group
@@ -55,7 +81,10 @@ class Utilities {
         Utilities::untag_existed_field_access_terms($media);
 
         if (count($targets) > 0) {
-            $media->set('field_access_terms', $targets);
+            // get access control field from config
+            $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+
+            $media->set($access_control_field, $targets);
             $media->save();
         }
         Utilities::adding_media_only_into_group($media);
@@ -189,16 +218,22 @@ class Utilities {
      * @throws \Drupal\Core\Entity\EntityStorageException
      */
     public static function adding_islandora_object_to_group($entity) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($entity);
+
         // Exit early if it has no access terms
-        if (!$entity->hasField('field_access_terms')) {
+        if (!$entity->hasField($access_control_field)) {
             return;
         }
 
         // clear out group relations with islandora_object first
         self::clear_group_relation_by_entity($entity);
 
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($entity);
+
         // Get the access terms for the node.
-        $node_terms = $entity->get('field_access_terms')->referencedEntities();
+        $node_terms = $entity->get($access_control_field)->referencedEntities();
         if (empty($node_terms)) {
             // no term, exist
             return;
@@ -236,8 +271,11 @@ class Utilities {
             return;
         }
 
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($node);
+
         // For media is parted of an islandora_object
-        if (!$node->hasField('field_access_terms')) {
+        if (!$node->hasField($access_control_field)) {
             return;
         }
 
@@ -248,16 +286,19 @@ class Utilities {
         self::clear_group_relation_by_entity($media);
 
         // Get the access terms for the node.
-        $terms = $node->get('field_access_terms')->referencedEntities();
+        $terms = $node->get($access_control_field)->referencedEntities();
         if (empty($terms)) {
             // no term, exit;
             return;
         }
 
-        if (!$media->hasField('field_access_terms')) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+
+        if (!$media->hasField($access_control_field)) {
             return;
         }
-        $media->set('field_access_terms', []);
+        $media->set($access_control_field, []);
 
         // if there is terms, loop through and add media group
         foreach ($terms as $term) {
@@ -278,17 +319,20 @@ class Utilities {
      * @return void
      */
     public static function clear_term_in_field_access_terms($ne, $group_name) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($ne);
+
         // TODO: search if the node->field_access_terms contain group name
-        if (!$ne->hasField('field_access_terms')) {
+        if (!$ne->hasField($access_control_field)) {
             return;
         }
         // Get the access terms for the node.
-        $terms = $ne->get('field_access_terms')->referencedEntities();
+        $terms = $ne->get($access_control_field)->referencedEntities();
         $i = 0;
 
         foreach ($terms as $term) {
             if ($term->label() === $group_name) {
-                $ne->get("field_access_terms")->removeItem($i);
+                $ne->get($access_control_field)->removeItem($i);
                 $ne->save();
                 break;
             }
@@ -304,7 +348,19 @@ class Utilities {
      * @throws \Drupal\Core\Entity\EntityStorageException
      */
     public static function clear_group_relation_by_entity($entity) {
-        if (!$entity->hasField('field_access_terms')) {
+        // get access control field from config
+        if ($entity->getEntityTypeId() === "node") {
+            // get access control field from config
+            $access_control_field = Utilities::getAccessControlFieldinNode($entity);
+        }
+        else if ($entity->getEntityTypeId() === "media") {
+            $access_control_field = Utilities::getAccessControlFieldinMedia($entity);
+        }
+        else {
+            return;
+        }
+
+        if (!$entity->hasField($access_control_field)) {
             return;
         }
         // for each term, loop through groups-entity
@@ -318,9 +374,20 @@ class Utilities {
      * @return void
      */
     public static function untag_existed_field_access_terms($entity) {
-        $terms = $entity->get('field_access_terms')->referencedEntities();
+        if ($entity->getEntityTypeId() === "node") {
+            // get access control field from config
+            $access_control_field = Utilities::getAccessControlFieldinNode($entity);
+        }
+        else if ($entity->getEntityTypeId() === "media") {
+            $access_control_field = Utilities::getAccessControlFieldinMedia($entity);
+        }
+        else {
+            return;
+        }
+
+        $terms = $entity->get($access_control_field)->referencedEntities();
         if(count($terms) > 0) {
-            $entity->set('field_access_terms', []);
+            $entity->set($access_control_field, []);
             $entity->save();
         }
     }
@@ -347,8 +414,11 @@ class Utilities {
      * @return void
      */
     public static function adding_media_only_into_group(MediaInterface $media) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+
         // For standalone media (no parent node)
-        if (!$media->hasField('field_access_terms')) {
+        if (!$media->hasField($access_control_field)) {
             return;
         }
 
@@ -356,7 +426,7 @@ class Utilities {
         self::clear_group_relation_by_entity($media);
 
         // get field_access_terms
-        $terms = $media->get('field_access_terms')->referencedEntities();
+        $terms = $media->get($access_control_field)->referencedEntities();
         if (empty($terms)) {
             // no term, exit;
             return;

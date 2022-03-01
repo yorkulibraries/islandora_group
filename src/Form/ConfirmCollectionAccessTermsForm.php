@@ -43,12 +43,15 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
             $options[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'" target="_blank">Click here</a>';
         }
 
-        if (!$collection->hasField('field_access_terms')) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($collection);
+
+        if (!$collection->hasField($access_control_field)) {
             return;
         }
 
         // Exit early if it has no assigned access terms
-        $access_terms = $collection->get('field_access_terms')->referencedEntities();
+        $access_terms = $collection->get($access_control_field)->referencedEntities();
 
         $form['groups'] = [
             '#type' => 'container'
@@ -77,8 +80,12 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
             foreach ($childrenNIDs as $cnid) {
                 // loop through all child nodes of this collection check each node has access_term matched with group
                 $childNode = \Drupal::entityTypeManager()->getStorage('node')->load($cnid);
-                if (count($childNode->get('field_access_terms')->referencedEntities())> 0 ) {
-                    $childTerms = $childNode->get('field_access_terms')->referencedEntities();
+
+                // get access control field from config
+                $access_control_field = Utilities::getAccessControlFieldinNode($childNode);
+
+                if (count($childNode->get($access_control_field)->referencedEntities())> 0 ) {
+                    $childTerms = $childNode->get($access_control_field)->referencedEntities();
                     foreach ($childTerms as $t) {
                         if ($t->id() === $term->id()) {
                             array_push($defaults, $childNode->id());
@@ -139,13 +146,15 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
      * @return void
      */
     public function taggingNodeWithTerm($node, $termid) {
-        // TODO: search if the node->field_access_terms contain group name
-        if (!$node->hasField('field_access_terms')) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($node);
+
+        if (!$node->hasField($access_control_field)) {
             return;
         }
 
         // tag term to field_access_terms
-        $node->get("field_access_terms")->appendItem([
+        $node->get($access_control_field)->appendItem([
             'target_id' => $termid,
         ]);
         $node->save();

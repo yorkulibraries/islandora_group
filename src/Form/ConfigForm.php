@@ -10,15 +10,13 @@ use Drupal\Core\Form\FormStateInterface;
  * Class ConfigForm.
  */
 class ConfigForm extends ConfigFormBase {
-    const CONFIG_NAME = 'islandora_group.config';
-    const CONFIG_TAXONOMY_VOCAL = 'islandora_group.taxonomy.vocabulary';
 
     /**
      * {@inheritdoc}
      */
     protected function getEditableConfigNames() {
         return [
-            self::CONFIG_NAME,
+            Utilities::CONFIG_NAME,
         ];
     }
 
@@ -33,7 +31,10 @@ class ConfigForm extends ConfigFormBase {
      * {@inheritdoc}
      */
     public function buildForm(array $form, FormStateInterface $form_state) {
-        $config = $this->config(self::CONFIG_NAME);
+
+        //\Drupal::configFactory()->getEditable(Utilities::CONFIG_NAME)->delete();
+
+        $config = $this->config(Utilities::CONFIG_NAME);
 
         // get list of existed groups
         $group_types = \Drupal::service('entity_type.manager')->getStorage('group_type')->loadMultiple();
@@ -51,8 +52,11 @@ class ConfigForm extends ConfigFormBase {
         $form['group']['description'] = [
             '#markup' => $this->t("<p>Select a Taxonomy Vocabulary to associate with a Group Type for: </p><ul><li>When a group of that Group Type is created, a term in that vocabulary with the same name as Group name</li></ul>"),
         ];
-
+        $is_inital = false;
         foreach ($group_types as $group_type) {
+            if (!empty($config->get($group_type->id(), 0))) {
+                $is_inital = true;
+            }
             $form['group'][$group_type->id()] = [
                 '#type' => 'select',
                 '#name' => $group_type->id(),
@@ -63,73 +67,82 @@ class ConfigForm extends ConfigFormBase {
             ];
         }
 
+        if ($is_inital) {
+            $form['content-type'] = [
+                '#type' => 'details',
+                '#title' => $this->t("Access Control field - Node"),
+                '#open' => TRUE,
+                '#tree' => TRUE
+            ];
+            $form['content-type']['description'] = [
+                '#markup' => $this->t("<p>Select the access control field to associate with a Group for: </p><ul><li>When a group of that Group Type is created, a term in that vocabulary with the same name as Group name</li></ul>"),
+            ];
 
-        $form['content-type'] = [
-            '#type' => 'details',
-            '#title' => $this->t("Access Control field - Node"),
-            '#open' => TRUE,
-            '#tree' => TRUE
-        ];
-        $form['content-type']['description'] = [
-            '#markup' => $this->t("<p>Select the access control field to associate with a Group for: </p><ul><li>When a group of that Group Type is created, a term in that vocabulary with the same name as Group name</li></ul>"),
-        ];
+            /*
+             * Node
+             */
+            $node_types = \Drupal::entityTypeManager()
+                ->getStorage('node_type')
+                ->loadMultiple();
+            $fields_options = [];
+            foreach ($node_types as $nt_name => $node_type) {
+                $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', $nt_name);
+                foreach ($fields as $fname => $field) {
+                    if ($field->getType() === "entity_reference") {
+                        $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
+                        if (in_array($config->get($group_type->id(), 0), $targets))
+                            $fields_options[$fname] = $fname;
+                    }
+                }
 
-        /*
-         * Node
-         */
-        $node_types = \Drupal::entityTypeManager()
-            ->getStorage('node_type')
-            ->loadMultiple();
-        $fields_options = [];
-        foreach ($node_types as $nt_name => $node_type) {
-            $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', $nt_name);
-            foreach ($fields as $fname => $field) {
-                $fields_options[$fname] = $fname;
+                $f = (!empty($config->get('node-type-access-fields'))) ? (array) json_decode($config->get('node-type-access-fields')): '';
+                $form['content-type'][$nt_name]['access-control-field'] = [
+                    '#type' => 'select',
+                    '#title' => $this->t($node_type->label()),
+                    '#options' => $fields_options,
+                    "#empty_option"=>t('- Select -'),
+                    '#default_value' => (!empty($f[$nt_name])) ? $f[$nt_name] : ''
+                ];
             }
 
-            $f = (!empty($config->get('node-type-access-fields'))) ? (array) json_decode($config->get('node-type-access-fields')): '';
-            $form['content-type'][$nt_name]['access-control-field'] = [
-                '#type' => 'select',
-                '#title' => $this->t($node_type->label()),
-                '#options' => $fields_options,
-                "#empty_option"=>t('- Select -'),
-                '#default_value' => (!empty($f[$nt_name])) ? $f[$nt_name] : ''
+            /*
+             * Media
+             */
+            $media_types = \Drupal::entityTypeManager()
+                ->getStorage('media_type')
+                ->loadMultiple();
+            $form['media'] = [
+                '#type' => 'details',
+                '#title' => $this->t("Access Control field - Media"),
+                '#open' => TRUE,
+                '#tree' => TRUE
             ];
-        }
+            $form['media']['description'] = [
+                '#markup' => $this->t("<p>Select the access control field to associate with a Group for: </p><ul><li>When a group of that Group Type is created, a term in that vocabulary with the same name as Group name</li></ul>"),
+            ];
 
-        /*
-         * Media
-         */
-        $media_types = \Drupal::entityTypeManager()
-            ->getStorage('media_type')
-            ->loadMultiple();
-        $form['media'] = [
-            '#type' => 'details',
-            '#title' => $this->t("Access Control field - Media"),
-            '#open' => TRUE,
-            '#tree' => TRUE
-        ];
-        $form['media']['description'] = [
-            '#markup' => $this->t("<p>Select the access control field to associate with a Group for: </p><ul><li>When a group of that Group Type is created, a term in that vocabulary with the same name as Group name</li></ul>"),
-        ];
+            $fields_options = [];
+            foreach ($media_types as $media_name => $meida_type) {
+                $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('media', $media_name);
+                foreach ($fields as $fname => $field) {
+                    if ($field->getType() === "entity_reference") {
+                        $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
+                        if (in_array($config->get($group_type->id(), 0), $targets))
+                            $fields_options[$fname] = $fname;
+                    }
+                }
 
-        $fields_options = [-1 => "- Select -"];
-        foreach ($media_types as $media_name => $meida_type) {
-            //Utilities::logging($node_type);
-            $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('media', $media_name);
-            foreach ($fields as $fname => $field) {
-                $fields_options[$fname] = $fname;
+                $f = (!empty($config->get('media-type-access-fields'))) ? (array) json_decode($config->get('media-type-access-fields')): '';
+                $form['media'][$media_name]['access-control-field'] = [
+                    '#type' => 'select',
+                    '#title' => $this->t($meida_type->label()),
+                    '#options' => $fields_options,
+                    "#empty_option"=>t('- Select -'),
+                    '#default_value' => (!empty($f[$media_name])) ? $f[$media_name] : ''
+                ];
             }
-
-            $f = (!empty($config->get('media-type-access-fields'))) ? (array) json_decode($config->get('media-type-access-fields')): '';
-            $form['media'][$media_name]['access-control-field'] = [
-                '#type' => 'select',
-                '#title' => $this->t($meida_type->label()),
-                '#options' => $fields_options,
-                "#empty_option"=>t('- Select -'),
-                '#default_value' => (!empty($f[$media_name])) ? $f[$media_name] : ''
-            ];
         }
+
         return parent::buildForm($form, $form_state);
     }
 
@@ -137,7 +150,7 @@ class ConfigForm extends ConfigFormBase {
      * {@inheritdoc}
      */
     public function submitForm(array &$form, FormStateInterface $form_state) {
-        $config = $this->configFactory->getEditable(self::CONFIG_NAME);
+        $config = $this->configFactory->getEditable(Utilities::CONFIG_NAME);
 
         $groups = \Drupal::service('entity_type.manager')->getStorage('group_type')->loadMultiple();
         foreach ($groups as $group) {

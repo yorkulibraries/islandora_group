@@ -24,7 +24,11 @@ class MediaAccessControlForm extends FormBase {
         // Get the access terms for the node.
         $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
-        $node_terms = $media->get('field_access_terms')->referencedEntities();
+
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+
+        $node_terms = $media->get($access_control_field)->referencedEntities();
         if (!empty($node_terms)) {
             // no term, exist
             foreach ($node_terms as $nt) {
@@ -102,7 +106,10 @@ class MediaAccessControlForm extends FormBase {
                 $targets[] = ['target_id' => $term_id];
             }
             if (count($targets) > 0) {
-                $media->set('field_access_terms', $targets);
+                // get access control field from config
+                $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+
+                $media->set($access_control_field, $targets);
                 $media->save();
             }
             // add media to selected group
