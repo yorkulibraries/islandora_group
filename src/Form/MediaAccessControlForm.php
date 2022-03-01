@@ -21,6 +21,14 @@ class MediaAccessControlForm extends FormBase {
      * {@inheritdoc}
      */
     public function buildForm(array $form, FormStateInterface $form_state, MediaInterface $media = NULL) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+        if (!isset($access_control_field)) {
+            \Drupal::messenger()->addWarning(t('The media <i>'.$media->bundle().'</i> does not have an access control field. 
+                Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>'));
+            return [];
+        }
+
         // Get the access terms for the node.
         $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];

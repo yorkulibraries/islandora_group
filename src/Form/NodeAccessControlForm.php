@@ -8,7 +8,7 @@ use Drupal\node\NodeInterface;
 use Drupal\media\Entity\Media;
 use Drupal\node\Entity\Node;
 
-class IsandoraObjectAccessControlForm extends FormBase {
+class NodeAccessControlForm extends FormBase {
 
     /**
      * {@inheritdoc}
@@ -21,6 +21,15 @@ class IsandoraObjectAccessControlForm extends FormBase {
      * {@inheritdoc}
      */
     public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $node = NULL) {
+        // get access control field from config
+        $access_control_field = Utilities::getAccessControlFieldinNode($node);
+
+        if (!isset($access_control_field)) {
+            \Drupal::messenger()->addWarning(t('The content <i>'.$node->bundle().'</i> does not have an access control field. 
+                Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>'));
+            return [];
+        }
+        
         // Get the access terms for the node.
         $options_available_media = [];
         $options_unvailable_media = [];
@@ -39,9 +48,6 @@ class IsandoraObjectAccessControlForm extends FormBase {
 
         $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
-
-        // get access control field from config
-        $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
         $node_terms = $node->get($access_control_field)->referencedEntities();
         if (!empty($node_terms)) {

@@ -10,7 +10,7 @@ islandora_group.recursive_apply_accesscontrol:
 islandora_group.node.access_control:
   path: '/node/{node}/access-control'
   defaults:
-    _form: '\Drupal\islandora_group\Form\IsandoraObjectAccessControlForm'
+    _form: '\Drupal\islandora_group\Form\NodeAccessControlForm'
     _title: 'Access control with Groups'
   requirements:
     _permission: 'administer site configuration'
@@ -36,7 +36,7 @@ islandora_group.media.access_control:
         type: entity:node
 
 islandora_group.config_form:
-  path: '/admin/config/islandora_group/config'
+  path: '/admin/config/access-control/islandora_group'
   defaults:
     _form: '\Drupal\islandora_group\Form\ConfigForm'
     _title: 'Islandora Group Configuration'

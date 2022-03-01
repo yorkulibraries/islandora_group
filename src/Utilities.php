@@ -25,10 +25,9 @@ class Utilities {
      * @return mixed
      */
     public static function getAccessControlFieldinNode(NodeInterface $node) {
-        self::print_log($node->bundle());
         $config = \Drupal::config(Utilities::CONFIG_NAME);
         $fields = (array)json_decode($config->get("node-type-access-fields"));
-        return $fields[$node->bundle()];
+        return (array_key_exists($node->bundle(), $fields)) ? $fields[$node->bundle()] : null;
     }
 
     /**
@@ -36,10 +35,9 @@ class Utilities {
      * @return mixed
      */
     public static function getAccessControlFieldinMedia(MediaInterface $media) {
-        self::print_log($media->bundle());
         $config = \Drupal::config(Utilities::CONFIG_NAME);
         $fields = (array)json_decode($config->get("media-type-access-fields"));
-        return $fields[$media->bundle()];
+        return (array_key_exists($media->bundle(), $fields)) ? $fields[$media->bundle()] : null;
     }
 
     /**
