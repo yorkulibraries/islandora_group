@@ -24,8 +24,8 @@ class MediaAccessControlForm extends FormBase {
         // get access control field from config
         $access_control_field = Utilities::getAccessControlFieldinMedia($media);
         if (!isset($access_control_field)) {
-            \Drupal::messenger()->addWarning(t('The media <i>'.$media->bundle().'</i> does not have an access control field. 
-                Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>'));
+            \Drupal::messenger()->addWarning(t('The media type <i>'.$media->bundle().'</i> does not have an access control field. 
+                Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>.'));
             return [];
         }
 

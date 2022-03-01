@@ -31,9 +31,6 @@ class ConfigForm extends ConfigFormBase {
      * {@inheritdoc}
      */
     public function buildForm(array $form, FormStateInterface $form_state) {
-
-        //\Drupal::configFactory()->getEditable(Utilities::CONFIG_NAME)->delete();
-
         $config = $this->config(Utilities::CONFIG_NAME);
 
         // get list of existed groups
@@ -84,9 +81,11 @@ class ConfigForm extends ConfigFormBase {
             $node_types = \Drupal::entityTypeManager()
                 ->getStorage('node_type')
                 ->loadMultiple();
-            $fields_options = [];
+
             foreach ($node_types as $nt_name => $node_type) {
+                $fields_options = [];
                 $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', $nt_name);
+
                 foreach ($fields as $fname => $field) {
                     if ($field->getType() === "entity_reference") {
                         $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
@@ -121,8 +120,9 @@ class ConfigForm extends ConfigFormBase {
                 '#markup' => $this->t("<p>Select the access control field to associate with a Group for: </p><ul><li>When a group of that Group Type is created, a term in that vocabulary with the same name as Group name</li></ul>"),
             ];
 
-            $fields_options = [];
+
             foreach ($media_types as $media_name => $meida_type) {
+                $fields_options = [];
                 $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('media', $media_name);
                 foreach ($fields as $fname => $field) {
                     if ($field->getType() === "entity_reference") {

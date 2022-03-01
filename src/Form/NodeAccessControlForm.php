@@ -25,8 +25,8 @@ class NodeAccessControlForm extends FormBase {
         $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
         if (!isset($access_control_field)) {
-            \Drupal::messenger()->addWarning(t('The content <i>'.$node->bundle().'</i> does not have an access control field. 
-                Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>'));
+            \Drupal::messenger()->addWarning(t('The content type - <i>'.$node->bundle().'</i> does not have an access control field. 
+                Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>.'));
             return [];
         }
         
