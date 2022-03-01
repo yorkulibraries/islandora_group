@@ -134,8 +134,9 @@ function islandora_group_node_update(NodeInterface $node) {
             if (!empty(\Drupal::hasService('islandora.utils'))) {
                 $medias = \Drupal::service('islandora.utils')->getMedia($node);
             }
-            else {
-                $medias = Utilities::getMedia($node);
+            $other_medias = Utilities::getMedia($node);
+            if (count($other_medias) > 0) {
+                $medias = array_merge($medias, $other_medias);
             }
             foreach ($medias as $media) {
                 Utilities::taggingFieldAccessTermMedia($media, $targets);

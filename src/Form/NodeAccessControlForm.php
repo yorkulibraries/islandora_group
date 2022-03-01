@@ -40,8 +40,9 @@ class NodeAccessControlForm extends FormBase {
         if (!empty(\Drupal::hasService('islandora.utils'))) {
             $medias = \Drupal::service('islandora.utils')->getMedia($node);
         }
-        else {
-            $medias = Utilities::getMedia($node);
+        $other_medias = Utilities::getMedia($node);
+        if (count($other_medias) > 0) {
+            $medias = array_merge($medias, $other_medias);
         }
 
         foreach ($medias as $media) {
@@ -262,8 +263,9 @@ class NodeAccessControlForm extends FormBase {
                 if (!empty(\Drupal::hasService('islandora.utils'))) {
                     $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                 }
-                else {
-                    $child_medias = Utilities::getMedia($child);
+                $other_medias = Utilities::getMedia($node);
+                if (count($other_medias) > 0) {
+                    $child_medias = array_merge($child_medias, $other_medias);
                 }
 
                 foreach ($child_medias as $child_media) {
@@ -288,8 +290,9 @@ class NodeAccessControlForm extends FormBase {
                     if (!empty(\Drupal::hasService('islandora.utils'))) {
                         $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                     }
-                    else {
-                        $child_medias = Utilities::getMedia($child);
+                    $other_medias = Utilities::getMedia($node);
+                    if (count($other_medias) > 0) {
+                        $child_medias = array_merge($child_medias, $other_medias);
                     }
                     foreach ($child_medias as $child_media) {
                         $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
