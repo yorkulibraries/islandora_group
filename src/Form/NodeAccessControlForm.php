@@ -21,22 +21,22 @@ class NodeAccessControlForm extends FormBase {
      * {@inheritdoc}
      */
     public function buildForm(array $form, FormStateInterface $form_state, NodeInterface $node = NULL) {
-        $child_medias = Utilities::getMedia($node);
-        //Utilities::logging($child_medias);
 
         // get access control field from config
         $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
-        if (!isset($access_control_field)) {
+        // make sure the selected access control field valid
+        if (empty($access_control_field) || !$node->hasField($access_control_field) ) {
             \Drupal::messenger()->addWarning(t('The content type - <i>'.$node->bundle().'</i> does not have an access control field. 
                 Please set the field for access control by <a href="/admin/config/access-control/islandora_group">clicking here</a>.'));
             return [];
         }
-        
+
         // Get the access terms for the node.
         $options_available_media = [];
         $options_unvailable_media = [];
 
+        $medias = [];
         if (!empty(\Drupal::hasService('islandora.utils'))) {
             $medias = \Drupal::service('islandora.utils')->getMedia($node);
         }
@@ -44,17 +44,17 @@ class NodeAccessControlForm extends FormBase {
         if (count($other_medias) > 0) {
             $medias = array_merge($medias, $other_medias);
         }
-
         foreach ($medias as $media) {
             // get access control field from config
             $access_control_field = Utilities::getAccessControlFieldinMedia($media);
-
-            $terms = $media->get($access_control_field)->referencedEntities();
-            if (count($terms) > 0) {
-                $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
-            }
-            else {
-                $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+            if (isset($access_control_field)) {
+                $terms = $media->get($access_control_field)->referencedEntities();
+                if (count($terms) > 0) {
+                    $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                }
+                else {
+                    $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                }
             }
         }
 
@@ -260,10 +260,11 @@ class NodeAccessControlForm extends FormBase {
             // TODO : UI configure add child's media to group
             if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
 
+                $child_medias = [];
                 if (!empty(\Drupal::hasService('islandora.utils'))) {
                     $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                 }
-                $other_medias = Utilities::getMedia($node);
+                $other_medias = Utilities::getMedia($child);
                 if (count($other_medias) > 0) {
                     $child_medias = array_merge($child_medias, $other_medias);
                 }
@@ -287,10 +288,11 @@ class NodeAccessControlForm extends FormBase {
 
                 // TODO : UI configure add child's media to group
                 if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
+                    $child_medias = [];
                     if (!empty(\Drupal::hasService('islandora.utils'))) {
                         $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
                     }
-                    $other_medias = Utilities::getMedia($node);
+                    $other_medias = Utilities::getMedia($child);
                     if (count($other_medias) > 0) {
                         $child_medias = array_merge($child_medias, $other_medias);
                     }

@@ -126,11 +126,17 @@ function islandora_group_node_update(NodeInterface $node) {
             // get access control field from config
             $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
+            // make sure the selected access control field valid
+            if (empty($access_control_field) || !$node->hasField($access_control_field) ) {
+                return;
+            }
+
             $node_terms = $node->get($access_control_field)->referencedEntities();
             $targets = [];
             foreach ($node_terms as $term) {
                 $targets[] = ['target_id' => $term->id()];
             }
+            $medias = [];
             if (!empty(\Drupal::hasService('islandora.utils'))) {
                 $medias = \Drupal::service('islandora.utils')->getMedia($node);
             }

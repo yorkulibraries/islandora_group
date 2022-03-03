@@ -51,15 +51,3 @@ Install the module the following module: https://github.com/digitalutsc/islandor
 1. How to setup: https://www.youtube.com/watch?v=ZMp0lPelOZw
 2. Bulk batch update on the access control field which you are setup for entities.
 
-### Work with Federated Search
-
-- Required modules: 
-  * Federated Search Front-end user interface: https://github.com/digitalutsc/drupal_ajax_solr 
-  * Add a Search Api Solr field for Access Control with Group: https://github.com/digitalutsc/group_solr
-
-- In `/admin/config/search/search-api/index/default_solr_index/fields`, Click Add fields > General > Group: Access Control (search_api_group_access_control) 
-- **How does it work ?** 
-  - Every time a node or media is indexed to Solr, this field will be processed by checking the access control configuration which is setup with Group module. It will determine the entity to be public or private for annonymous users
-  - Field's values to be indexed to Solr:
-    - Public: 200 
-    - Private: 403

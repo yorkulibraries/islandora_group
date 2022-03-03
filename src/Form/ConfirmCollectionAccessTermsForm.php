@@ -25,8 +25,6 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
     public function buildForm(array $form, FormStateInterface $form_state, string $nid = NULL) {
         $this->id = $nid;
 
-
-
         // get collection node
         $collection = \Drupal::entityTypeManager()->getStorage('node')->load($this->id);
 
@@ -45,7 +43,8 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
         // get access control field from config
         $access_control_field = Utilities::getAccessControlFieldinNode($collection);
 
-        if (!$collection->hasField($access_control_field)) {
+        // make sure the selected access control field valid
+        if (empty($access_control_field) || !$collection->hasField($access_control_field) ) {
             return;
         }
 
@@ -83,7 +82,7 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
                 // get access control field from config
                 $access_control_field = Utilities::getAccessControlFieldinNode($childNode);
 
-                if (count($childNode->get($access_control_field)->referencedEntities())> 0 ) {
+                if (!empty($access_control_field) && count($childNode->get($access_control_field)->referencedEntities())> 0 ) {
                     $childTerms = $childNode->get($access_control_field)->referencedEntities();
                     foreach ($childTerms as $t) {
                         if ($t->id() === $term->id()) {
@@ -148,7 +147,7 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
         // get access control field from config
         $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
-        if (!$node->hasField($access_control_field)) {
+        if (empty($access_control_field) || !$node->hasField($access_control_field)) {
             return;
         }
 

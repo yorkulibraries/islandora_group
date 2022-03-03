@@ -85,8 +85,10 @@ class Utilities {
             // get access control field from config
             $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
-            $node->set($access_control_field, $targets);
-            $node->save();
+            if (!empty($access_control_field)) {
+                $node->set($access_control_field, $targets);
+                $node->save();
+            }
         }
         // add this node to group
         Utilities::adding_islandora_object_to_group($node);
@@ -105,9 +107,10 @@ class Utilities {
         if (count($targets) > 0) {
             // get access control field from config
             $access_control_field = Utilities::getAccessControlFieldinMedia($media);
-
-            $media->set($access_control_field, $targets);
-            $media->save();
+            if (!empty($access_control_field) && $media->hasField($access_control_field)) {
+                $media->set($access_control_field, $targets);
+                $media->save();
+            }
         }
         Utilities::adding_media_only_into_group($media);
     }
@@ -245,15 +248,12 @@ class Utilities {
         $access_control_field = Utilities::getAccessControlFieldinNode($entity);
 
         // Exit early if it has no access terms
-        if (!$entity->hasField($access_control_field)) {
+        if (empty($access_control_field) || !$entity->hasField($access_control_field)) {
             return;
         }
 
         // clear out group relations with islandora_object first
         self::clear_group_relation_by_entity($entity);
-
-        // get access control field from config
-        $access_control_field = Utilities::getAccessControlFieldinNode($entity);
 
         // Get the access terms for the node.
         $node_terms = $entity->get($access_control_field)->referencedEntities();
@@ -298,7 +298,7 @@ class Utilities {
         $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
         // For media is parted of an islandora_object
-        if (!$node->hasField($access_control_field)) {
+        if (empty($access_control_field) || !$node->hasField($access_control_field)) {
             return;
         }
 
@@ -318,7 +318,7 @@ class Utilities {
         // get access control field from config
         $access_control_field = Utilities::getAccessControlFieldinMedia($media);
 
-        if (!$media->hasField($access_control_field)) {
+        if (empty($access_control_field) || !$media->hasField($access_control_field)) {
             return;
         }
         $media->set($access_control_field, []);
@@ -346,7 +346,7 @@ class Utilities {
         $access_control_field = Utilities::getAccessControlFieldinNode($ne);
 
         // TODO: search if the node->field_access_terms contain group name
-        if (!$ne->hasField($access_control_field)) {
+        if (empty($access_control_field) || !$ne->hasField($access_control_field)) {
             return;
         }
         // Get the access terms for the node.
@@ -379,11 +379,9 @@ class Utilities {
         else if ($entity->getEntityTypeId() === "media") {
             $access_control_field = Utilities::getAccessControlFieldinMedia($entity);
         }
-        else {
-            return;
-        }
 
-        if (!$entity->hasField($access_control_field)) {
+        // check if $access_control_field exists and valid
+        if (empty($access_control_field) || !$entity->hasField($access_control_field)) {
             return;
         }
         // for each term, loop through groups-entity
@@ -404,7 +402,9 @@ class Utilities {
         else if ($entity->getEntityTypeId() === "media") {
             $access_control_field = Utilities::getAccessControlFieldinMedia($entity);
         }
-        else {
+
+        // check if $access_control_field exists and valid
+        if (empty($access_control_field) || !$entity->hasField($access_control_field)) {
             return;
         }
 
@@ -441,7 +441,7 @@ class Utilities {
         $access_control_field = Utilities::getAccessControlFieldinMedia($media);
 
         // For standalone media (no parent node)
-        if (!$media->hasField($access_control_field)) {
+        if (empty($access_control_field) || !$media->hasField($access_control_field)) {
             return;
         }
 
