@@ -46,16 +46,19 @@ class NodeAccessControlForm extends FormBase {
         }
         foreach ($medias as $media) {
             // get access control field from config
-            $access_control_field = Utilities::getAccessControlFieldinMedia($media);
-            if (isset($access_control_field)) {
-                $terms = $media->get($access_control_field)->referencedEntities();
-                if (count($terms) > 0) {
-                    $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
-                }
-                else {
-                    $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+            if (isset($media)) {
+                $access_control_field = Utilities::getAccessControlFieldinMedia($media);
+                if (isset($access_control_field)) {
+                    $terms = $media->get($access_control_field)->referencedEntities();
+                    if (count($terms) > 0) {
+                        $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                    }
+                    else {
+                        $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                    }
                 }
             }
+
         }
 
         $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
