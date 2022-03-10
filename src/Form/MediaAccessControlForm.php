@@ -116,7 +116,7 @@ class MediaAccessControlForm extends FormBase {
                 // get access control field from config
                 $access_control_field = Utilities::getAccessControlFieldinMedia($media);
 
-                if (!empty($access_control_field) && count($media->get($access_control_field)->referencedEntities())> 0 ) {
+                if (!empty($access_control_field)) {
                     $media->set($access_control_field, $targets);
                     $media->save();
                 }
