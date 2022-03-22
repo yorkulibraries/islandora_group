@@ -94,7 +94,7 @@ class ConfigForm extends ConfigFormBase {
                     }
                 }
 
-                $f = (!empty($config->get('node-type-access-fields'))) ? (array) json_decode($config->get('node-type-access-fields')): '';
+                $f = (!empty($config->get('node-type-access-fields'))) ? $config->get('node-type-access-fields'): '';
                 $form['content-type'][$nt_name]['access-control-field'] = [
                     '#type' => 'select',
                     '#title' => $this->t($node_type->label()),
@@ -132,7 +132,7 @@ class ConfigForm extends ConfigFormBase {
                     }
                 }
 
-                $f = (!empty($config->get('media-type-access-fields'))) ? (array) json_decode($config->get('media-type-access-fields')): '';
+                $f = (!empty($config->get('media-type-access-fields'))) ? $config->get('media-type-access-fields'): '';
                 $form['media'][$media_name]['access-control-field'] = [
                     '#type' => 'select',
                     '#title' => $this->t($meida_type->label()),
@@ -167,7 +167,7 @@ class ConfigForm extends ConfigFormBase {
             }
 
         }
-        $config->set("node-type-access-fields", json_encode($field_access_control_config))->save();
+        $config->set("node-type-access-fields", $field_access_control_config)->save();
 
         // for media
         $field_access_control_config = [];
@@ -176,7 +176,7 @@ class ConfigForm extends ConfigFormBase {
                 $field_access_control_config[$type] = $field_value['access-control-field'];
             }
         }
-        $config->set("media-type-access-fields", json_encode($field_access_control_config))->save();
+        $config->set("media-type-access-fields", $field_access_control_config)->save();
 
         parent::submitForm($form, $form_state);
     }
