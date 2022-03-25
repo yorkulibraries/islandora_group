@@ -197,10 +197,6 @@ class NodeAccessControlForm extends FormBase {
                     '#options' => $options_available_children,
                     '#title' => $this->t('Select the following children nodes:'),
                 );
-                $form['access-control']['children-nodes']['include-media'] = array(
-                    '#type' => 'checkbox',
-                    '#title' => $this->t('Include their media as well.'),
-                );
             }
         }
 
@@ -261,20 +257,17 @@ class NodeAccessControlForm extends FormBase {
             $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($cnid, $targets));
 
             // TODO : UI configure add child's media to group
-            if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
+            $child_medias = [];
+            if (!empty(\Drupal::hasService('islandora.utils'))) {
+                $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
+            }
+            $other_medias = Utilities::getMedia($child);
+            if (count($other_medias) > 0) {
+                $child_medias = array_merge($child_medias, $other_medias);
+            }
 
-                $child_medias = [];
-                if (!empty(\Drupal::hasService('islandora.utils'))) {
-                    $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
-                }
-                $other_medias = Utilities::getMedia($child);
-                if (count($other_medias) > 0) {
-                    $child_medias = array_merge($child_medias, $other_medias);
-                }
-
-                foreach ($child_medias as $child_media) {
-                    $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
-                }
+            foreach ($child_medias as $child_media) {
+                $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
             }
         }
 
@@ -289,19 +282,16 @@ class NodeAccessControlForm extends FormBase {
                 // tagging the child node
                 $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($cnid, $targets));
 
-                // TODO : UI configure add child's media to group
-                if ($form_state->getValues()['access-control']['children-nodes']['include-media'] == true) {
-                    $child_medias = [];
-                    if (!empty(\Drupal::hasService('islandora.utils'))) {
-                        $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
-                    }
-                    $other_medias = Utilities::getMedia($child);
-                    if (count($other_medias) > 0) {
-                        $child_medias = array_merge($child_medias, $other_medias);
-                    }
-                    foreach ($child_medias as $child_media) {
-                        $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
-                    }
+                $child_medias = [];
+                if (!empty(\Drupal::hasService('islandora.utils'))) {
+                    $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
+                }
+                $other_medias = Utilities::getMedia($child);
+                if (count($other_medias) > 0) {
+                    $child_medias = array_merge($child_medias, $other_medias);
+                }
+                foreach ($child_medias as $child_media) {
+                    $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
                 }
             }
         }
