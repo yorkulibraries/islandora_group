@@ -72,13 +72,22 @@ class MediaAccessControlForm extends FormBase {
             'group_member' => $this->t('Users'),
         ];
 
+        $header = [
+            'group_name' => $this->t('Group'),
+            'group_permission' => $this->t('Group Permission'),
+            'group_member' => $this->t('Accounts can access'),
+        ];
+
         $form['access-control']['media']['access-control'] = array(
+            '#id' => 'group-media-table',
             '#type' => 'tableselect',
+            '#attributes' => array('class' => array('stripe')),
             '#header' => $header,
             '#options' => $group_terms,
             '#default_value' => $node_term_default,
             '#empty' => $this->t('No users found'),
-            '#prefix' => $this->t('<p><h3>Select which group(s) to add this media to:</h3></p>')
+            '#prefix' => $this->t('<p><h3>Select which group(s) to add this media to:</h3></p><div class="group-table">'),
+            '#suffix' => $this->t("</div>")
         );
 
         $form['submit'] = array(

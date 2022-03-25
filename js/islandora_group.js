@@ -8,6 +8,16 @@ var table1 = $('#group-node-table').DataTable({
 $("select[name='group-node-table_length']").removeClass("input-sm");
 $("select[name='group-node-table_length']").addClass("input-md");
 
+var table6 = $('#group-media-table').DataTable({
+    "order": [[1, "desc"]],
+    "iDisplayLength": 20,
+    "bLengthChange": false,
+    "bInfo" : false,
+    "dom": "lifrtp"
+});
+$("select[name='group-media-table_length']").removeClass("input-sm");
+$("select[name='group-media-table_length']").addClass("input-md");
+
 var table2 = $('#group-children-nodes-has-access-control-table').DataTable({
     "order": [[1, "desc"]],
     "iDisplayLength": 20,

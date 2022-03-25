@@ -79,7 +79,7 @@ function islandora_group_form_alter(&$form, &$form_state, $form_id) {
         // when insert update
         $form['actions']['submit']['#submit'][] = 'form_submit_delete_relation_untagging_entity_to_group';
     }
-    else if ($form_id === "islandora_object_access_control_form") {
+     else if (in_array($form_id, ['media_access_control_form', "islandora_object_access_control_form"])) {
         $form['#attached']['library'] = array(
             'islandora_group/datatables',
         );
