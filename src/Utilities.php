@@ -152,9 +152,8 @@ class Utilities {
             if (in_array($term->name, array_keys($groups))) {
                 $group = $groups[$term->name];
                 $result[$term->tid] = [
-                    'group_id' => $group->id(),
                     'group_name' => $term->name,
-                    "group_permission" => t("<a href='/group/".$group->id()."/permissions' target='_blank'>Configure permissions</a>"),
+                    "group_permission" => t("<a href='/group/".$group->id()."/permissions' target='_blank'>Configuration</a>"),
                     'group_member' => t($group_members[$group->id()]),
                 ];
             }
@@ -425,7 +424,7 @@ class Utilities {
                 $user = $gm->getUser();
                 $members .= $user->getAccountName() . ", ";
             }
-            $members .= '<p><a href="/group/'.$group->id().'/members" target="_blank">Configure</a></p>';
+            $members .= '<p><a href="/group/'.$group->id().'/members" target="_blank">Change</a></p>';
             $group_members[$group->id()] = $members;
         }
         return $group_members;

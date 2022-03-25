@@ -75,12 +75,15 @@ function islandora_group_entity_delete(EntityInterface $entity) {
  * @return void
  */
 function islandora_group_form_alter(&$form, &$form_state, $form_id) {
-
      if (str_starts_with($form_id, "group_content_group_content_type")  && str_ends_with($form_id, "_delete_form")) {
         // when insert update
         $form['actions']['submit']['#submit'][] = 'form_submit_delete_relation_untagging_entity_to_group';
     }
-
+    else if ($form_id === "islandora_object_access_control_form") {
+        $form['#attached']['library'] = array(
+            'islandora_group/datatables',
+        );
+    }
 }
 
 /**

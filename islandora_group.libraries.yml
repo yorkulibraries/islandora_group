@@ -1,0 +1,15 @@
+datatables:
+  version: 1.x
+  js:
+    //code.jquery.com/jquery-3.5.1.js: { type: external, minified: true }
+    //cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js: { type: external, minified: true }
+    //cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.min.js: { type: external, minified: true }
+    //cdn.datatables.net/rowreorder/1.2.7/js/dataTables.rowReorder.min.js: {}
+    js/islandora_group.js: {}
+  css:
+    theme:
+      //cdn.datatables.net/v/dt/dt-1.11.5/datatables.min.css: { type: external, minified: true }
+      //cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css: { type: external, minified: true }
+      css/islandora_group.css: {}
+
+

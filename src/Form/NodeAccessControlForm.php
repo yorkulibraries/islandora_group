@@ -51,10 +51,18 @@ class NodeAccessControlForm extends FormBase {
                 if (isset($access_control_field)) {
                     $terms = $media->get($access_control_field)->referencedEntities();
                     if (count($terms) > 0) {
-                        $options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                        //$options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                        $options_unvailable_media[$media->id()] = [
+                            'media_title' => $this->t('<a href="/node/'.$media->id().'" target="_blank">'.$media->getName().'</a>'),
+                            'media_permission' => $this->t('<a href="/node/'.$media->id().'/access-control" target="_blank">Configuration</a>'),
+                        ];
                     }
                     else {
-                        $options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                        //$options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
+                        $options_available_media[$media->id()] = [
+                            'media_title' => $this->t('<a href="/node/'.$media->id().'" target="_blank">'.$media->getName().'</a>'),
+                            'media_permission' => $this->t('<a href="/node/'.$media->id().'/access-control" target="_blank">Configuration</a>'),
+                        ];
                     }
                 }
             }
@@ -92,27 +100,22 @@ class NodeAccessControlForm extends FormBase {
             '#title' => $this->t($node->getTitle()),
             '#open' => TRUE,
         ];
-        /*$form['access-control']['node']['access-control'] = [
-            '#type' => 'checkboxes',
-            '#options' => $group_terms,
-            '#title' => $this->t('Select group(s) to add to: '),
-            '#default_value' => $node_term_default
-        ];*/
 
         $header = [
-            'group_id' => $this->t('Group ID'),
-            'group_name' => $this->t('Group Name'),
-            'group_permission' => $this->t('Permission'),
-            'group_member' => $this->t('Users'),
+            'group_name' => $this->t('Group'),
+            'group_permission' => $this->t('Group Permission'),
+            'group_member' => $this->t('Accounts can access'),
         ];
 
         $form['access-control']['node']['access-control'] = array(
+            '#id' => 'group-node-table',
             '#type' => 'tableselect',
             '#header' => $header,
             '#options' => $group_terms,
             '#default_value' => $node_term_default,
             '#empty' => $this->t('No users found'),
-            '#prefix' => $this->t('<p><h3>Select which group(s) to add this node to:</h3></p>')
+            '#prefix' => $this->t('<p><h3>Select which group(s) to add this node to:</h3></p><div class="group-table">'),
+            '#suffix' => $this->t("</div>")
         );
 
         $form['access-control']['media'] = [
@@ -121,22 +124,35 @@ class NodeAccessControlForm extends FormBase {
             '#open' => TRUE,
         ];
 
+        $header = [
+            'media_title' => $this->t('Media'),
+            'media_permission' => $this->t('Access Control'),
+        ];
         if (count($options_available_media) > 0) {
             $form['access-control']['media']['access-control'] = [
-                '#type' => 'checkboxes',
+                '#id' => 'group-media-has-access-control-table',
+                '#type' => 'tableselect',
                 '#title' => $this->t('Select media to add to the above group(s)'),
                 '#options' => $options_available_media,
-
+                '#header' => $header,
+                '#prefix' => $this->t('<p><h3>Select the following children nodes to override with the selected Groups above:</h3></p>
+                                <div class="group-table">'),
+                '#suffix' => $this->t("</div>")
             ];
         }
 
         if (count($options_unvailable_media) > 0) {
             $form['access-control']['media']['not-access-control'] = [
-                '#type' => 'checkboxes',
+                '#id' => 'group-media-has-no-access-control-table',
+                '#type' => 'table',
                 '#title' => $this->t('The following media already has access control: '),
-                '#options' => $options_unvailable_media,
+                '#rows' => $options_unvailable_media,
                 '#default_value' => array_keys($options_unvailable_media),
-                '#disabled' => true
+                '#disabled' => true,
+                '#header' => $header,
+                '#prefix' => $this->t('<p><h3>Select the following children nodes to override with the selected Groups above:</h3></p>
+                                <div class="group-table">'),
+                '#suffix' => $this->t("</div>")
             ];
             $form['access-control']['media']['override'] = array(
                 '#type' => 'checkbox',
@@ -144,20 +160,32 @@ class NodeAccessControlForm extends FormBase {
             );
         }
 
+        // get children nodes by field_part_of
+        $part_of_NIDs = [];
+        $query = \Drupal::entityQuery('node')
+            ->condition('status', 1)
+            ->condition('field_part_of', $node->id());
+        $part_of_NIDs = $query->execute();
 
-        if (Utilities::isCollection($node)) {
+        if (Utilities::isCollection($node) || count($part_of_NIDs) > 0) {
             // check if this node is collection, redirect to confirm form
             // get children nodes
+            // get children nodes by field_member_of
+            $member_of_NIDs= [];
             $query = \Drupal::entityQuery('node')
                 ->condition('status', 1)
                 ->condition('field_member_of', $node->id());
-            $childrenNIDs = $query->execute();
+            $member_of_NIDs = $query->execute();
+
+            // merged them
+            $childrenNids = array_merge($member_of_NIDs, $part_of_NIDs);
 
             $options_available_children = [];
             $options_unvailable_children = [];
 
             $options = [];
-            foreach ($childrenNIDs as $cnid) {
+
+            foreach ($childrenNids as $cnid) {
                 $childNode = \Drupal::entityTypeManager()->getStorage('node')->load($cnid);
 
                 // get access control field from config
@@ -165,40 +193,63 @@ class NodeAccessControlForm extends FormBase {
 
                 $childnode_terms = $childNode->get($access_control_field)->referencedEntities();
                 if (count($childnode_terms) > 0) {
-                    $options_unvailable_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+                    //$options_unvailable_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+                    $options_unvailable_children[$cnid] = [
+                        'node_title' => $this->t('<a href="/node/'.$childNode->id().'" target="_blank">'.$childNode->getTitle().'</a>'),
+                        'node_permission' => $this->t('<a href="/node/'.$childNode->id().'/access-control" target="_blank">Configuration</a>'),
+                    ];
                 }
                 else {
-                    $options_available_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+                    //$options_available_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
+                    $options_available_children[$cnid] = [
+                        'node_title' => $this->t('<a href="/node/'.$childNode->id().'" target="_blank">'.$childNode->getTitle().'</a>'),
+                        'node_permission' => $this->t('<a href="/node/'.$childNode->id().'/access-control" target="_blank">Configuration</a>'),
+                    ];
                 }
             }
             $form['access-control']['children-nodes'] = [
                 '#type' => 'details',
-                '#title' => $this->t("Children Node"),
+                '#title' => $this->t("Children Nodes"),
                 '#open' => TRUE,
             ];
 
+            $header = [
+                'node_title' => $this->t('Children Nodes'),
+                'node_permission' => $this->t('Access Control'),
+            ];
+            if (count($options_available_children) > 0) {
+                $form['access-control']['children-nodes']['access-control'] = array(
+                    '#id' => 'group-children-nodes-has-no-access-control-table',
+                    '#type' => 'tableselect',
+                    '#header' => $header,
+                    '#options' => $options_available_children,
+                    '#prefix' => $this->t('<p><h3>Select the following children nodes:</h3></p>
+                                <div class="group-table">'),
+                    '#suffix' => $this->t("</div>")
+                );
+            }
             if (count($options_unvailable_children) > 0) {
-                $form['access-control']['children-nodes']['not-access-control'] = [
-                    '#type' => 'checkboxes',
-                    '#title' => $this->t('The following children nodes already has access control: '),
-                    '#options' => $options_unvailable_children,
+                $form['access-control']['children-nodes']['not-access-control'] = array(
+                    '#id' => 'group-children-nodes-has-access-control-table',
+                    '#type' => 'table',
+                    '#header' => $header,
+                    '#rows' => $options_unvailable_children,
+                    '#prefix' => $this->t('<p><h3>Have access control:</h3></p>
+                                <div class="group-table">'),
+                    '#suffix' => $this->t("</div>"),
                     '#default_value' => array_keys($options_unvailable_children),
-                    '#disabled' => true
-                ];
+                    '#disabled' => true,
+                );
                 $form['access-control']['children-nodes']['override'] = array(
                     '#type' => 'checkbox',
                     '#title' => $this->t('Override access control.'),
                 );
             }
-
-            if (count($options_available_children) > 0) {
-                $form['access-control']['children-nodes']['access-control'] = array(
-                    '#type' => 'checkboxes',
-                    '#options' => $options_available_children,
-                    '#title' => $this->t('Select the following children nodes:'),
-                );
-            }
         }
+
+
+
+
 
         $form['submit'] = array(
             '#type' => 'submit',
