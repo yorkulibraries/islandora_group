@@ -69,6 +69,7 @@ class NodeAccessControlForm extends FormBase {
 
         }
 
+        $access_control_field = Utilities::getAccessControlFieldinNode($node);
         $group_terms = Utilities::getIslandoraAccessTermsinTable();//Utilities::getIslandoraAccessTerms();
         $node_term_default = [];
 
@@ -165,10 +166,13 @@ class NodeAccessControlForm extends FormBase {
 
         // get children nodes by field_part_of
         $part_of_NIDs = [];
-        $query = \Drupal::entityQuery('node')
-            ->condition('status', 1)
-            ->condition('field_part_of', $node->id());
-        $part_of_NIDs = $query->execute();
+        if (entityTypeHasField("node", "field_part_of")) { 
+            $query = \Drupal::entityQuery('node')
+                ->condition('status', 1)
+                ->condition('field_part_of', $node->id());
+            $part_of_NIDs = $query->execute();
+        }
+        
 
         if (Utilities::isCollection($node) || count($part_of_NIDs) > 0) {
             // check if this node is collection, redirect to confirm form
@@ -181,6 +185,7 @@ class NodeAccessControlForm extends FormBase {
             $member_of_NIDs = $query->execute();
 
             // merged them
+            //$childrenNids = array_merge($member_of_NIDs, $part_of_NIDs);
             $childrenNids = array_merge($member_of_NIDs, $part_of_NIDs);
 
             $options_available_children = [];

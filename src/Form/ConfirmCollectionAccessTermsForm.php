@@ -5,7 +5,7 @@ use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Entity\EntityForm;
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 
 /**
  * Defines a confirmation form to confirm deletion of something by id.
@@ -119,7 +119,7 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
                 $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
 
                 // search group-node relations based on term_name
-                foreach (GroupContent::loadByEntity($collection) as $group_content) {
+                foreach (GroupRelationship::loadByEntity($collection) as $group_content) {
                     $group = $group_content->getGroup();
                     if ($group->label() === $term_name) {
 

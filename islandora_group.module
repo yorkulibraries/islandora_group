@@ -8,7 +8,7 @@
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
-use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\GroupRelationship;
 use Drupal\media\MediaInterface;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\islandora_group\Utilities;
@@ -91,7 +91,7 @@ function islandora_group_form_alter(&$form, &$form_state, $form_id) {
  */
 function islandora_group_node_delete(NodeInterface $node) {
     // Remove content from all groups.
-    foreach (GroupContent::loadByEntity($node) as $group_content) {
+    foreach (GroupRelationship::loadByEntity($node) as $group_content) {
         $group_content->delete();
     }
 }
@@ -100,7 +100,7 @@ function islandora_group_node_delete(NodeInterface $node) {
  * Implements hook_media_delete().
  */
 function islandora_group_media_delete(MediaInterface $media) {
-    foreach (GroupContent::loadByEntity($media) as $group_content) {
+    foreach (GroupRelationship::loadByEntity($media) as $group_content) {
         $group_content->delete();
     }
 }
@@ -201,3 +201,26 @@ function islandora_group_batch_finished($success, $results, $operations) {
     }
 }
 
+/**
+ * Check if an entity type has a field.
+ * https://www.drupal.org/forum/support/post-installation/2020-06-25/how-to-check-if-field-exists-for-entitytypemanager
+ * @param string $entity_type
+ *   The entity type.
+ * @param string $field_name
+ *   The field name.
+ *
+ * @return bool
+ *   Returns a TRUE if the entity type has the field.
+ */
+function entityTypeHasField($entity_type = 'node', $field_name) {
+  $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo($entity_type);
+
+  foreach($bundles as $bundle => $label) {
+    $all_bundle_fields = \Drupal::service('entity_field.manager')->getFieldDefinitions($entity_type, $bundle);
+    if (isset($all_bundle_fields[$field_name])) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
