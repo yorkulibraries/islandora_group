@@ -45,6 +45,7 @@ class NodeAccessControlForm extends FormBase {
             $medias = array_merge($medias, $other_medias);
         }
         foreach ($medias as $media) {
+              $groups = implode(", ", Utilities::getGroupsByMedia($media->id()));
             // get access control field from config
             if (isset($media)) {
                 $access_control_field = Utilities::getAccessControlFieldinMedia($media);
@@ -54,6 +55,7 @@ class NodeAccessControlForm extends FormBase {
                         //$options_unvailable_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
                         $options_unvailable_media[$media->id()] = [
                             'media_title' => $this->t('<a href="/media/'.$media->id().'" target="_blank">'.$media->getName().'</a>'),
+                            'groups' => $groups,
                             'media_permission' => $this->t('<a href="/media/'.$media->id().'/access-control" target="_blank">Configuration</a>'),
                         ];
                     }
@@ -61,6 +63,7 @@ class NodeAccessControlForm extends FormBase {
                         //$options_available_media[$media->id()] = $media->getName() . "  <a href='/media/".$media->id()."/access-control' target='_blank'>Configure seperately</a>";
                         $options_available_media[$media->id()] = [
                             'media_title' => $this->t('<a href="/media/'.$media->id().'" target="_blank">'.$media->getName().'</a>'),
+                            'groups' => $groups,
                             'media_permission' => $this->t('<a href="/media/'.$media->id().'/access-control" target="_blank">Configuration</a>'),
                         ];
                     }
@@ -128,6 +131,7 @@ class NodeAccessControlForm extends FormBase {
 
         $header = [
             'media_title' => $this->t('Media'),
+            'groups' => $this->t("In Group(s)"),
             'media_permission' => $this->t('Access Control'),
         ];
         if (count($options_available_media) > 0) {
@@ -161,6 +165,7 @@ class NodeAccessControlForm extends FormBase {
             $form['access-control']['media']['<strong>Override</strong>'] = array(
                 '#type' => 'checkbox',
                 '#title' => $this->t('<strong>Override</strong>'),
+                '#description' => $this->t("To have the same access control with this node")
             );
         }
 
@@ -199,11 +204,13 @@ class NodeAccessControlForm extends FormBase {
                 // get access control field from config
                 $access_control_field = Utilities::getAccessControlFieldinNode($childNode);
 
+                $groups = implode(", ", Utilities::getGroupsByNode($cnid));
                 $childnode_terms = $childNode->get($access_control_field)->referencedEntities();
                 if (count($childnode_terms) > 0) {
                     //$options_unvailable_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
                     $options_unvailable_children[$cnid] = [
                         'node_title' => $this->t('<a href="/node/'.$childNode->id().'" target="_blank">'.$childNode->getTitle().'</a>'),
+                        'groups' => $groups,
                         'node_permission' => $this->t('<a href="/node/'.$childNode->id().'/access-control" target="_blank">Configuration</a>'),
                     ];
                 }
@@ -211,6 +218,7 @@ class NodeAccessControlForm extends FormBase {
                     //$options_available_children[$cnid] = $childNode->getTitle() . '. <a href="/node/'.$childNode->id().'/access-control" target="_blank">Configure seperately</a>';
                     $options_available_children[$cnid] = [
                         'node_title' => $this->t('<a href="/node/'.$childNode->id().'" target="_blank">'.$childNode->getTitle().'</a>'),
+                        'groups' => $groups,
                         'node_permission' => $this->t('<a href="/node/'.$childNode->id().'/access-control" target="_blank">Configuration</a>'),
                     ];
                 }
@@ -223,6 +231,7 @@ class NodeAccessControlForm extends FormBase {
 
             $header = [
                 'node_title' => $this->t('Children Nodes'),
+                "groups" => $this->t("In Group(s)"),
                 'node_permission' => $this->t('Access Control'),
             ];
             if (count($options_available_children) > 0) {
@@ -253,6 +262,7 @@ class NodeAccessControlForm extends FormBase {
                 $form['access-control']['children-nodes']['<strong>Override</strong>'] = array(
                     '#type' => 'checkbox',
                     '#title' => $this->t('<strong>Override</strong>'),
+                    '#description' => $this->t("To have the same access control with this node")
                 );
             }
         }
@@ -289,13 +299,16 @@ class NodeAccessControlForm extends FormBase {
         );
 
         // get selected media
-        $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
-        foreach ($selected_media as $media_id) {
-            $media = Media::load($media_id);
+        if (isset($form_state->getValues()['access-control']['media']['access-control'])) {
+          $selected_media = array_values(array_filter($form_state->getValues()['access-control']['media']['access-control']));
+          foreach ($selected_media as $media_id) {
+              $media = Media::load($media_id);
 
-            // tag the selected media of the node
-            $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($media, $targets));
+              // tag the selected media of the node
+              $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($media, $targets));
+          }
         }
+
 
         // handle override
         if ($form_state->getValues()['access-control']['media']['<strong>Override</strong>'] == true) {
@@ -309,27 +322,29 @@ class NodeAccessControlForm extends FormBase {
         }
 
         // for children node
-        $children_nodes = array_values(array_filter($form_state->getValues()['access-control']['children-nodes']['access-control']));
-        foreach ($children_nodes as $cnid) {
-            // get selected child node
-            $child = Node::load($cnid);
+        if (isset($form_state->getValues()['access-control']['children-nodes']['access-control'])) {
+          $children_nodes = array_values(array_filter($form_state->getValues()['access-control']['children-nodes']['access-control']));
+          foreach ($children_nodes as $cnid) {
+              // get selected child node
+              $child = Node::load($cnid);
 
-            // tagging the child node
-            $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($cnid, $targets));
+              // tagging the child node
+              $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermsNode', array($cnid, $targets));
 
-            // TODO : UI configure add child's media to group
-            $child_medias = [];
-            if (!empty(\Drupal::hasService('islandora.utils'))) {
-                $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
-            }
-            $other_medias = Utilities::getMedia($child);
-            if (count($other_medias) > 0) {
-                $child_medias = array_merge($child_medias, $other_medias);
-            }
+              // TODO : UI configure add child's media to group
+              $child_medias = [];
+              if (!empty(\Drupal::hasService('islandora.utils'))) {
+                  $child_medias = \Drupal::service('islandora.utils')->getMedia($child);
+              }
+              $other_medias = Utilities::getMedia($child);
+              if (count($other_medias) > 0) {
+                  $child_medias = array_merge($child_medias, $other_medias);
+              }
 
-            foreach ($child_medias as $child_media) {
-                $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
-            }
+              foreach ($child_medias as $child_media) {
+                  $operations[] = array('\Drupal\islandora_group\Utilities::taggingFieldAccessTermMedia', array($child_media, $targets));
+              }
+          }
         }
 
         // for override children nodes

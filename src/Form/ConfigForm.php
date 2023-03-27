@@ -87,7 +87,8 @@ class ConfigForm extends ConfigFormBase {
                 $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', $nt_name);
 
                 foreach ($fields as $fname => $field) {
-                    if ($field->getType() === "entity_reference") {
+                    if ($field->getType() === "entity_reference"
+                      && isset($field->getSettings()['handler_settings']['target_bundles'])) {
                         $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
                         if (in_array($config->get($group_type->id(), 0), $targets))
                             $fields_options[$fname] = $fname;
@@ -125,7 +126,8 @@ class ConfigForm extends ConfigFormBase {
                 $fields_options = [];
                 $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('media', $media_name);
                 foreach ($fields as $fname => $field) {
-                    if ($field->getType() === "entity_reference") {
+                    if ($field->getType() === "entity_reference"
+                      && isset($field->getSettings()['handler_settings']['target_bundles'])) {
                         $targets = array_keys($field->getSettings()['handler_settings']['target_bundles']);
                         if (in_array($config->get($group_type->id(), 0), $targets))
                             $fields_options[$fname] = $fname;
