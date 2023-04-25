@@ -52,7 +52,7 @@ class Utilities
   public static function getAccessControlFieldinNode(NodeInterface $node) {
     $config = \Drupal::config(self::CONFIG_NAME);
     $fields = $config->get("node-type-access-fields");
-    return (array_key_exists($node->bundle(), $fields)) ? $fields[$node->bundle()] : null;
+    return (isset($fields) && array_key_exists($node->bundle(), $fields)) ? $fields[$node->bundle()] : null;
   }
 
   /**
@@ -62,7 +62,7 @@ class Utilities
   public static function getAccessControlFieldinMedia(MediaInterface $media) {
     $config = \Drupal::config(self::CONFIG_NAME);
     $fields = $config->get("media-type-access-fields");
-    return (array_key_exists($media->bundle(), $fields)) ? $fields[$media->bundle()] : null;
+    return (isset($fields) && array_key_exists($media->bundle(), $fields)) ? $fields[$media->bundle()] : null;
   }
 
   /**
