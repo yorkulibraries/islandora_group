@@ -20,9 +20,7 @@
     "require": {
         "drupal/group": "^3.0",
         "drupal/groupmedia": "^4.0@alpha",
-        "drupal/group_permissions":"^2.0@alpha",
-        "drupal/rules" : "^3.0@alpha",
-        "drupal/media_library_edit":"^3.0"
+        "drupal/group_permissions":"^2.0@alpha"
     },
     "authors": [
         {
