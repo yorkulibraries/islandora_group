@@ -7,7 +7,6 @@ dependencies:
   - group
   - groupmedia
   - group_permissions
-  - rules
   - field_permissions
   - media
   - taxonomy
