@@ -732,7 +732,7 @@ class Utilities
    */
   public static function getGroupsByNode($nid) {
     $group_ids = array();
-    $ids = \Drupal::entityQuery('group_relationship')
+    $ids = \Drupal::entityQuery('group_content')
       ->condition('entity_id', $nid)
       ->execute();
 
@@ -751,7 +751,7 @@ class Utilities
    */
   public static function getGroupsByMedia($mid) {
     $group_ids = array();
-    $ids = \Drupal::entityQuery('group_relationship')
+    $ids = \Drupal::entityQuery('group_content')
       ->condition('entity_id', $mid)
       ->execute();
 
