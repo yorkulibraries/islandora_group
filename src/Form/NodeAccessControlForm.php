@@ -169,17 +169,8 @@ class NodeAccessControlForm extends FormBase {
             );
         }
 
-        // get children nodes by field_part_of
-        $part_of_NIDs = [];
-        if (entityTypeHasField("node", "field_part_of")) { 
-            $query = \Drupal::entityQuery('node')
-                ->condition('status', 1)
-                ->condition('field_part_of', $node->id());
-            $part_of_NIDs = $query->execute();
-        }
-        
 
-        if (Utilities::isCollection($node) || count($part_of_NIDs) > 0) {
+        if (Utilities::isCollection($node) > 0) {
             // check if this node is collection, redirect to confirm form
             // get children nodes
             // get children nodes by field_member_of
@@ -190,8 +181,8 @@ class NodeAccessControlForm extends FormBase {
             $member_of_NIDs = $query->execute();
 
             // merged them
-            //$childrenNids = array_merge($member_of_NIDs, $part_of_NIDs);
-            $childrenNids = array_merge($member_of_NIDs, $part_of_NIDs);
+            //$childrenNids = array_merge($member_of_NIDs);
+            $childrenNids = array_merge($member_of_NIDs);
 
             $options_available_children = [];
             $options_unvailable_children = [];
