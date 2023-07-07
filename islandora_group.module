@@ -13,197 +13,201 @@ use Drupal\media\MediaInterface;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\islandora_group\Utilities;
 use Drupal\Core\Entity\EntityInterface;
+
 /**
  * Implements hook_help().
  */
 function islandora_group_help($route_name, RouteMatchInterface $route_match) {
-    switch ($route_name) {
-        // Main module help for the islandora_group module.
-        case 'help.page.islandora_group':
-            $output = '';
-            $output .= '<h3>' . t('About') . '</h3>';
-            $output .= '<p>' . t('This module assist to manage access control for node and media with Group module') . '</p>';
-            return $output;
+  switch ($route_name) {
+    // Main module help for the islandora_group module.
+    case 'help.page.islandora_group':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('This module assist to manage access control for node and media with Group module') . '</p>';
+      return $output;
 
-        default:
-    }
+    default:
+  }
 }
 
 /**
  * Implements hook_theme().
  */
 function islandora_group_theme() {
-    return [
-        'islandora_group' => [
-            'render element' => 'children',
-        ],
-    ];
+  return [
+    'islandora_group' => [
+      'render element' => 'children',
+    ],
+  ];
 }
 
 /**
- * Implements hook_entity_insert
+ * Implements hook_entity_insert().
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function islandora_group_entity_insert(EntityInterface $entity) {
-    Utilities::sync_associated_taxonomy_with_group($entity, "insert");
+  Utilities::sync_associated_taxonomy_with_group($entity, "insert");
 }
 
 /**
- * Implements hook_entity_update
+ * Implements hook_entity_update().
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function islandora_group_entity_update(EntityInterface $entity) {
-    Utilities::sync_associated_taxonomy_with_group($entity, "update");
+  Utilities::sync_associated_taxonomy_with_group($entity, "update");
 }
 
 /**
- * Implements hook_entity_delete
+ * Implements hook_entity_delete()
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function islandora_group_entity_delete(EntityInterface $entity) {
-    Utilities::sync_associated_taxonomy_with_group($entity, "delete");
+  Utilities::sync_associated_taxonomy_with_group($entity, "delete");
 }
 
 /**
- * Implements hook_form_alter
+ * Implements hook_form_alter().
+ *
  * @param $form
  * @param $form_state
  * @param $form_id
  * @return void
  */
 function islandora_group_form_alter(&$form, &$form_state, $form_id) {
-     if (str_starts_with($form_id, "group_content_group_content_type")  && str_ends_with($form_id, "_delete_form")) {
-        // when insert update
-        $form['actions']['submit']['#submit'][] = 'form_submit_delete_relation_untagging_entity_to_group';
-    }
-     else if (in_array($form_id, ['media_access_control_form', "islandora_object_access_control_form"])) {
-        $form['#attached']['library'] = array(
-            'islandora_group/datatables',
-        );
-    }
+  if (str_starts_with($form_id, "group_content_group_content_type")  && str_ends_with($form_id, "_delete_form")) {
+    // When insert update.
+    $form['actions']['submit']['#submit'][] = 'form_submit_delete_relation_untagging_entity_to_group';
+  }
+  elseif (in_array($form_id, [
+    'media_access_control_form', "islandora_object_access_control_form",
+  ])) {
+    $form['#attached']['library'] = [
+      'islandora_group/datatables',
+    ];
+  }
 }
 
 /**
  * Implements hook_node_delete().
  */
 function islandora_group_node_delete(NodeInterface $node) {
-    // Remove content from all groups.
-    foreach (GroupRelationship::loadByEntity($node) as $group_content) {
-        $group_content->delete();
-    }
+  // Remove content from all groups.
+  foreach (GroupRelationship::loadByEntity($node) as $group_content) {
+    $group_content->delete();
+  }
 }
 
 /**
  * Implements hook_media_delete().
  */
 function islandora_group_media_delete(MediaInterface $media) {
-    foreach (GroupRelationship::loadByEntity($media) as $group_content) {
-        $group_content->delete();
-    }
+  foreach (GroupRelationship::loadByEntity($media) as $group_content) {
+    $group_content->delete();
+  }
 }
 
 /**
  * Implements hook_node_insert().
  */
 function islandora_group_node_insert(NodeInterface $node) {
-    Utilities::print_log("islandora_group_node_insert");
-    // add this node to group
-    if (!Utilities::isCalledFromGroupModule()) {
-        Utilities::adding_islandora_object_to_group($node);
-    }
+  Utilities::print_log("islandora_group_node_insert");
+  // Add this node to group.
+  if (!Utilities::isCalledFromGroupModule()) {
+    Utilities::adding_islandora_object_to_group($node);
+  }
 }
 
 /**
  * Implements hook_node_update().
  */
 function islandora_group_node_update(NodeInterface $node) {
-    Utilities::print_log("islandora_group_node_update");
-    if (!Utilities::isCalledFromGroupModule()) {
-        Utilities::adding_islandora_object_to_group($node);
+  Utilities::print_log("islandora_group_node_update");
+  if (!Utilities::isCalledFromGroupModule()) {
+    Utilities::adding_islandora_object_to_group($node);
 
-        // Tag media with selected terms only while bulk batch update
-        if (Utilities::isCalledFromBulkBatch()) {
-            // get access control field from config
-            $access_control_field = Utilities::getAccessControlFieldinNode($node);
+    // Tag media with selected terms only while bulk batch update.
+    if (Utilities::isCalledFromBulkBatch()) {
+      // Get access control field from config.
+      $access_control_field = Utilities::getAccessControlFieldinNode($node);
 
-            // make sure the selected access control field valid
-            if (empty($access_control_field) || !$node->hasField($access_control_field) ) {
-                return;
-            }
+      // Make sure the selected access control field valid.
+      if (empty($access_control_field) || !$node->hasField($access_control_field)) {
+        return;
+      }
 
-            $node_terms = $node->get($access_control_field)->referencedEntities();
-            $targets = [];
-            foreach ($node_terms as $term) {
-                $targets[] = ['target_id' => $term->id()];
-            }
-            $medias = [];
-            if (!empty(\Drupal::hasService('islandora.utils'))) {
-                $medias = \Drupal::service('islandora.utils')->getMedia($node);
-            }
-            $other_medias = Utilities::getMedia($node);
-            if (count($other_medias) > 0) {
-                $medias = array_merge($medias, $other_medias);
-            }
-            foreach ($medias as $media) {
-                Utilities::taggingFieldAccessTermMedia($media, $targets);
-            }
-        }
+      $node_terms = $node->get($access_control_field)->referencedEntities();
+      $targets = [];
+      foreach ($node_terms as $term) {
+        $targets[] = ['target_id' => $term->id()];
+      }
+      $medias = [];
+      if (!empty(\Drupal::hasService('islandora.utils'))) {
+        $medias = \Drupal::service('islandora.utils')->getMedia($node);
+      }
+      $other_medias = Utilities::getMedia($node);
+      if (count($other_medias) > 0) {
+        $medias = array_merge($medias, $other_medias);
+      }
+      foreach ($medias as $media) {
+        Utilities::taggingFieldAccessTermMedia($media, $targets);
+      }
     }
+  }
 }
 
 /**
  * Implements hook_media_insert().
  */
 function islandora_group_media_insert(MediaInterface $media) {
-    Utilities::print_log("islandora_group_media_insert");
-    // add this node to group
-    if (!Utilities::isCalledFromGroupModule()) {
-        Utilities::adding_media_only_into_group($media);
-    }
+  Utilities::print_log("islandora_group_media_insert");
+  // Add this node to group.
+  if (!Utilities::isCalledFromGroupModule()) {
+    Utilities::adding_media_only_into_group($media);
+  }
 }
 
 /**
  * Implements hook_media_update().
  */
 function islandora_group_media_update(MediaInterface $media) {
-    Utilities::print_log("islandora_group_media_update");
-    // add this node to group
-    if (!Utilities::isCalledFromGroupModule()) {
-        Utilities::adding_media_only_into_group($media);
-    }
+  Utilities::print_log("islandora_group_media_update");
+  // Add this node to group.
+  if (!Utilities::isCalledFromGroupModule()) {
+    Utilities::adding_media_only_into_group($media);
+  }
 }
 
 /**
  * Batch 'finished' callback used by both batch 1 and batch 2.
  */
 function islandora_group_batch_finished($success, $results, $operations) {
-    $messenger = \Drupal::messenger();
-    if ($success) {
-        // Here we could do something meaningful with the results.
-        // We just display the number of nodes we processed...
-        $messenger->addMessage(t('@count access control applied.', ['@count' => count($results)]));
-    }
-    else {
-        // An error occurred.
-        // $operations contains the operations that remained unprocessed.
-        $error_operation = reset($operations);
-        $messenger->addMessage(
-            t('An error occurred while applying @operation with arguments : @args',
-                [
-                    '@operation' => $error_operation[0],
-                    '@args' => print_r($error_operation[0], TRUE),
-                ]
-            )
-        );
-    }
+  $messenger = \Drupal::messenger();
+  if ($success) {
+    // Here we could do something meaningful with the results.
+    // We just display the number of nodes we processed...
+    $messenger->addMessage(t('@count access control applied.', ['@count' => count($results)]));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $messenger->addMessage(
+      t('An error occurred while applying @operation with arguments : @args',
+      [
+        '@operation' => $error_operation[0],
+        '@args' => print_r($error_operation[0], TRUE),
+      ]
+    ));
+  }
 }
 
 /**
  * Check if an entity type has a field.
- * https://www.drupal.org/forum/support/post-installation/2020-06-25/how-to-check-if-field-exists-for-entitytypemanager
+ * https://www.drupal.org/forum/support/post-installation/2020-06-25/how-to-check-if-field-exists-for-entitytypemanager.
+ *
  * @param string $entity_type
  *   The entity type.
  * @param string $field_name
@@ -215,7 +219,7 @@ function islandora_group_batch_finished($success, $results, $operations) {
 function entityTypeHasField($entity_type = 'node', $field_name) {
   $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo($entity_type);
 
-  foreach($bundles as $bundle => $label) {
+  foreach ($bundles as $bundle => $label) {
     $all_bundle_fields = \Drupal::service('entity_field.manager')->getFieldDefinitions($entity_type, $bundle);
     if (isset($all_bundle_fields[$field_name])) {
       return TRUE;
