@@ -5,8 +5,8 @@ namespace Drupal\islandora_group\Form;
 use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\Core\Entity\EntityForm;
 use Drupal\group\Entity\GroupRelationship;
+use Drupal\taxonomy\Entity\Term;
 
 /**
  * Defines a confirmation form to confirm deletion of something by id.
@@ -109,7 +109,7 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
     $collection = \Drupal::entityTypeManager()->getStorage('node')->load($form_state->getValues()['collection']);
     foreach ($form_state->getValues()['groups'] as $values) {
       $termid = $values['term-id'];
-      $term_name = \Drupal\taxonomy\Entity\Term::load($termid)->get('name')->value;
+      $term_name = Term::load($termid)->get('name')->value;
 
       foreach (array_keys($values['select-nodes']) as $nid) {
         // Get a children node of this collection.
@@ -132,9 +132,13 @@ class ConfirmCollectionAccessTermsForm extends ConfirmFormBase {
   /**
    * Tag field_access_terms of child node with a term.
    *
-   * @param $node
-   * @param $termid
+   * @param Drupal\node\NodeInterface $node
+   *   The node.
+   * @param int $termid
+   *   Term id.
+   *
    * @return void
+   *   Nothing.
    */
   public function taggingNodeWithTerm($node, $termid) {
     // Get access control field from config.

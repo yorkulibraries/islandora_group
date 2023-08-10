@@ -9,6 +9,9 @@ use Drupal\node\NodeInterface;
 use Drupal\media\Entity\Media;
 use Drupal\node\Entity\Node;
 
+/**
+ * Node access control form.
+ */
 class NodeAccessControlForm extends FormBase {
 
   /**

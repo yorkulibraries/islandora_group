@@ -6,9 +6,11 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\islandora_group\Utilities;
 use Drupal\media\MediaInterface;
-use Drupal\node\NodeInterface;
 use Drupal\media\Entity\Media;
 
+/**
+ * Media access controls.
+ */
 class MediaAccessControlForm extends FormBase {
 
   /**
@@ -111,10 +113,10 @@ class MediaAccessControlForm extends FormBase {
     $media = Media::load($form_state->getValues()['media_id']);
 
     // Untag field access terms in node level first.
-    Utilities::untag_existed_field_access_terms($media);
+    Utilities::untagExistedFieldAccessTerms($media);
 
     // Clear group relation with media.
-    Utilities::clear_group_relation_by_entity($media);
+    Utilities::clearGroupRelationByEntity($media);
 
     if (count($selected_groups) > 0) {
       $targets = [];
@@ -132,7 +134,7 @@ class MediaAccessControlForm extends FormBase {
         }
       }
       // Add media to selected group.
-      Utilities::adding_media_only_into_group($media);
+      Utilities::addingMediaOnlyIntoGroup($media);
     }
   }
 
